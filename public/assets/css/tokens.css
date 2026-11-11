@@ -1,0 +1,17 @@
+:root {
+  --bh-color-espresso: #2b1d16;
+  --bh-color-caramel: #c9944a;
+  --bh-color-caramel-text: #a0692a; /* caramel dùng cho chữ trên nền sáng (đạt tương phản AA) */
+  --bh-color-rust: #9b4a1b;
+  --bh-color-cream: #fbf8f2;
+  --bh-color-border: #eadfd3;
+  --bh-color-muted: #7a6a5f;
+  --bh-color-success: #2fae60;
+  --bh-color-success-dark: #1e7d46;
+  --bh-color-danger: #d9534f;
+  --bh-font-heading: "Playfair Display", serif;
+  --bh-font-body: "Poppins", sans-serif;
+  --bh-radius-md: 12px;
+  --bh-radius-lg: 16px;
+  --bh-shadow-sm: 0 2px 8px rgba(43, 29, 22, .06);
+}

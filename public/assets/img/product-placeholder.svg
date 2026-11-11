@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="BakeHouse">
+  <rect width="400" height="300" fill="#f3e9db"/>
+  <g fill="none" stroke="#c9944a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".85">
+    <path d="M200 215V110"/>
+    <path d="M200 140c-24-4-34-22-32-42 22 4 33 22 32 42z"/>
+    <path d="M200 140c24-4 34-22 32-42-22 4-33 22-32 42z"/>
+    <path d="M200 180c-24-4-34-22-32-42 22 4 33 22 32 42z"/>
+    <path d="M200 180c24-4 34-22 32-42-22 4-33 22-32 42z"/>
+    <path d="M200 110c-8-10-8-24 0-34 8 10 8 24 0 34z"/>
+  </g>
+  <text x="200" y="258" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#9b4a1b">BakeHouse</text>
+</svg>
