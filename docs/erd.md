@@ -5,7 +5,6 @@ erDiagram
     users ||--o| user_profiles : "1-1 có hồ sơ"
     users ||--o| carts : "1-1 có giỏ hàng"
     users ||--o{ orders : "1-N đặt"
-    users ||--o{ products : "1-N tạo (created_by)"
     users ||--o{ reviews : "1-N viết"
     users ||--o{ password_resets : "1-N"
     categories ||--o{ products : "1-N"
@@ -17,7 +16,6 @@ erDiagram
     products }o--o{ orders : "N-N qua order_items"
     orders ||--o{ order_items : "1-N"
     orders ||--o{ order_status_histories : "1-N"
-    users ||--o{ order_items : "vendor_id"
 
     users { bigint id PK
         varchar email UK
@@ -46,7 +44,6 @@ erDiagram
     products { bigint id PK
         bigint category_id FK
         bigint brand_id FK
-        bigint created_by FK
         varchar name
         varchar slug UK
         int price
@@ -78,7 +75,6 @@ erDiagram
     order_items { bigint id PK
         bigint order_id FK
         bigint product_id FK
-        bigint vendor_id FK
         varchar product_name
         int unit_price
         int quantity
@@ -117,6 +113,5 @@ erDiagram
 | N-N | `products`–`tags` (`product_tags`), `products`–`carts` (`cart_items`), `products`–`orders` (`order_items`) |
 
 ## Quy tắc nghiệp vụ gắn với dữ liệu
-- Multi-vendor: `products.created_by` và `order_items.vendor_id` quyết định admin nào được sửa sản phẩm / xử lý mục đơn.
-- Trạng thái đơn tổng suy ra từ `order_items.status` (xem `App\Enums\OrderStatus::derive`).
+- Một admin duy nhất (hoặc nhiều tài khoản role `admin` dùng chung) quản lý toàn bộ sản phẩm và đơn hàng của shop.
 - `products.rating_avg/rating_count` được tính lại từ các `reviews` không bị ẩn.

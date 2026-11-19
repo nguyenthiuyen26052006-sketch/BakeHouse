@@ -74,6 +74,14 @@ final class ReviewRepository extends BaseRepository
         $this->recalculate((int) $review['product_id']);
     }
 
+    public function reply(int $id, ?string $reply): void
+    {
+        $this->execute(
+            'UPDATE reviews SET admin_reply = ?, admin_replied_at = ? WHERE id = ?',
+            [$reply, $reply !== null ? date('Y-m-d H:i:s') : null, $id]
+        );
+    }
+
     public function deleteById(int $id): void
     {
         $review = $this->find($id);

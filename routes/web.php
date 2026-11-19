@@ -6,6 +6,7 @@ use App\Controllers\Client\AccountController;
 use App\Controllers\Client\AuthController;
 use App\Controllers\Client\CartController;
 use App\Controllers\Client\CheckoutController;
+use App\Controllers\Client\ContactController;
 use App\Controllers\Client\HomeController;
 use App\Controllers\Client\OrderController;
 use App\Controllers\Client\PageController;
@@ -36,8 +37,7 @@ $router->get('/register', [AuthController::class, 'showRegister'], [GuestMiddlew
 $router->post('/register', [AuthController::class, 'register'], [GuestMiddleware::class]);
 $router->get('/forgot-password', [AuthController::class, 'showForgot'], [GuestMiddleware::class]);
 $router->post('/forgot-password', [AuthController::class, 'forgot'], [GuestMiddleware::class]);
-$router->get('/reset-password/{token}', [AuthController::class, 'showReset'], [GuestMiddleware::class]);
-$router->post('/reset-password/{token}', [AuthController::class, 'reset'], [GuestMiddleware::class]);
+$router->post('/forgot-password/reset', [AuthController::class, 'resetDirect'], [GuestMiddleware::class]);
 
 // Authenticated users
 $router->group('', [AuthMiddleware::class], static function (Router $router): void {
@@ -50,6 +50,7 @@ $router->group('', [AuthMiddleware::class], static function (Router $router): vo
     $router->post('/checkout', [CheckoutController::class, 'store']);
     $router->get('/orders', [OrderController::class, 'index']);
     $router->get('/orders/{code}', [OrderController::class, 'show']);
+    $router->get('/contacts', [ContactController::class, 'index']);
 
     $router->post('/products/{slug}/review', [ReviewController::class, 'save']);
     $router->post('/products/{slug}/review/delete', [ReviewController::class, 'delete']);

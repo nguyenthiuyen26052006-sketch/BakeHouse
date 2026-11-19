@@ -49,27 +49,54 @@ partial('hero', ['heroTitle' => $product['name'], 'crumbs' => [['Trang chủ', '
 
     <section id="reviews" class="mt-5 pt-3">
         <h3 class="mb-4">Đánh giá sản phẩm</h3>
-        <?php if ($canReview) : ?>
+        <?php if ($canReview && $myReview) : ?>
             <div class="bh-panel mb-4">
-                <h5><?= $myReview ? 'Chỉnh sửa đánh giá của bạn' : 'Viết đánh giá' ?></h5>
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <h5 class="mb-1">Đánh giá của bạn</h5>
+                        <?= render_stars((float) $myReview['rating']) ?>
+                        <p class="mb-0 mt-2"><?= nl2br(e($myReview['comment'] ?? '')) ?></p>
+                    </div>
+                    <div class="d-flex gap-2 flex-shrink-0">
+                        <button class="bh-btn bh-btn--outline bh-btn--sm" type="button" data-bs-toggle="collapse" data-bs-target="#bhEditReview"><i class="bi bi-pencil"></i> Chỉnh sửa</button>
+                        <form method="post" action="/products/<?= e($product['slug']) ?>/review/delete" data-confirm="Bạn có chắc muốn xóa đánh giá của mình?">
+                            <?= csrf_field() ?>
+                            <button class="bh-btn bh-btn--dark bh-btn--sm" type="submit"><i class="bi bi-trash"></i> Xóa đánh giá</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="collapse<?= form_error('rating') || form_error('comment') ? ' show' : '' ?> mt-3" id="bhEditReview">
+                    <hr>
+                    <form method="post" action="/products/<?= e($product['slug']) ?>/review">
+                        <?= csrf_field() ?>
+                        <?php $currentRating = (int) ($myReview['rating'] ?? 5); ?>
+                        <div class="bh-rating-input mb-2">
+                            <?php for ($star = 5; $star >= 1; $star--) : ?>
+                                <input type="radio" id="star<?= $star ?>" name="rating" value="<?= $star ?>"<?= $currentRating === $star ? ' checked' : '' ?>>
+                                <label for="star<?= $star ?>" title="<?= $star ?> sao"><i class="bi bi-star-fill"></i></label>
+                            <?php endfor; ?>
+                        </div>
+                        <textarea class="form-control mb-3" name="comment" rows="3" maxlength="1000" placeholder="Chia sẻ cảm nhận của bạn…"><?= e($myReview['comment'] ?? '') ?></textarea>
+                        <?= form_error('rating') ?><?= form_error('comment') ?>
+                        <button class="bh-btn bh-btn--primary" type="submit">Cập nhật đánh giá</button>
+                    </form>
+                </div>
+            </div>
+        <?php elseif ($canReview) : ?>
+            <div class="bh-panel mb-4">
+                <h5>Viết đánh giá</h5>
                 <form method="post" action="/products/<?= e($product['slug']) ?>/review">
                     <?= csrf_field() ?>
-                    <?php $currentRating = (int) ($myReview['rating'] ?? 5); ?>
                     <div class="bh-rating-input mb-2">
                         <?php for ($star = 5; $star >= 1; $star--) : ?>
-                            <input type="radio" id="star<?= $star ?>" name="rating" value="<?= $star ?>"<?= $currentRating === $star ? ' checked' : '' ?>>
+                            <input type="radio" id="star<?= $star ?>" name="rating" value="<?= $star ?>"<?= $star === 5 ? ' checked' : '' ?>>
                             <label for="star<?= $star ?>" title="<?= $star ?> sao"><i class="bi bi-star-fill"></i></label>
                         <?php endfor; ?>
                     </div>
-                    <textarea class="form-control mb-3" name="comment" rows="3" maxlength="1000" placeholder="Chia sẻ cảm nhận của bạn…"><?= e($myReview['comment'] ?? '') ?></textarea>
+                    <textarea class="form-control mb-3" name="comment" rows="3" maxlength="1000" placeholder="Chia sẻ cảm nhận của bạn…"></textarea>
                     <?= form_error('rating') ?><?= form_error('comment') ?>
                     <button class="bh-btn bh-btn--primary" type="submit">Gửi đánh giá</button>
                 </form>
-                <?php if ($myReview) : ?>
-                    <form method="post" action="/products/<?= e($product['slug']) ?>/review/delete" class="mt-2" data-confirm="Bạn có chắc muốn xóa đánh giá của mình?">
-                        <?= csrf_field() ?><button class="btn btn-link text-danger p-0" type="submit">Xóa đánh giá</button>
-                    </form>
-                <?php endif; ?>
             </div>
         <?php elseif (auth_user()) : ?>
             <p class="bh-muted">Chỉ khách hàng đã nhận sản phẩm này mới có thể đánh giá.</p>
@@ -77,14 +104,21 @@ partial('hero', ['heroTitle' => $product['name'], 'crumbs' => [['Trang chủ', '
             <p class="bh-muted"><a href="/login">Đăng nhập</a> và mua hàng để đánh giá sản phẩm.</p>
         <?php endif; ?>
 
-        <?php if ($reviews === []) : ?>
-            <p class="bh-muted">Chưa có đánh giá nào.</p>
+        <?php $otherReviews = $myReview ? array_filter($reviews, static fn (array $r): bool => (int) $r['id'] !== (int) $myReview['id']) : $reviews; ?>
+        <?php if ($otherReviews === []) : ?>
+            <p class="bh-muted"><?= $myReview ? 'Chưa có đánh giá nào khác.' : 'Chưa có đánh giá nào.' ?></p>
         <?php endif; ?>
-        <?php foreach ($reviews as $review) : ?>
+        <?php foreach ($otherReviews as $review) : ?>
             <div class="bh-panel mb-3">
                 <div class="d-flex justify-content-between flex-wrap"><strong><?= e($review['author_name']) ?></strong><small class="bh-muted"><?= e(date('d/m/Y', strtotime($review['created_at']))) ?></small></div>
                 <?= render_stars((float) $review['rating']) ?>
                 <p class="mb-0 mt-2"><?= nl2br(e($review['comment'] ?? '')) ?></p>
+                <?php if (!empty($review['admin_reply'])) : ?>
+                    <div class="mt-3 ps-3 border-start border-3" style="border-color: var(--bh-color-caramel) !important;">
+                        <strong class="small text-uppercase" style="color: var(--bh-color-caramel-text)">Phản hồi từ BakeHouse</strong>
+                        <p class="mb-0 mt-1 small"><?= nl2br(e($review['admin_reply'])) ?></p>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endforeach; ?>
         <?= $paginator->render() ?>

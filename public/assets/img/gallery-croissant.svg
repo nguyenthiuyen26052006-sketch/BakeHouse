@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Croissant">
+  <rect width="400" height="300" fill="#ecddc4"/>
+  <g transform="translate(200,150)" fill="#c9944a" stroke="#9b4a1b" stroke-width="4">
+    <path d="M-140 10c20-60 70-95 140-95s120 35 140 95c-30-10-55 10-70 0-15-12-15-35-35-35s-20 23-35 35c-15 12-15-10-45 0-15 5-35 10-95 0z"/>
+  </g>
+  <g fill="#7a3a14" opacity=".6" stroke="#7a3a14" stroke-width="2">
+    <path d="M90 60 Q130 20 170 60" fill="none"/>
+    <path d="M150 65 Q190 25 230 65" fill="none"/>
+    <path d="M210 60 Q250 20 290 60" fill="none"/>
+  </g>
+</svg>

@@ -225,7 +225,7 @@ final class ProductRepository extends BaseRepository
     // ---------------------------------------------------------------- admin
 
     /** @return array{0: string, 1: array<string, mixed>} */
-    private function adminWhere(string $search, int $categoryId, int $ownerId, string $status): array
+    private function adminWhere(string $search, int $categoryId, string $status): array
     {
         $clauses = [];
         $params = [];
@@ -237,10 +237,6 @@ final class ProductRepository extends BaseRepository
             $clauses[] = 'p.category_id = :cat';
             $params['cat'] = $categoryId;
         }
-        if ($ownerId > 0) {
-            $clauses[] = 'p.created_by = :owner';
-            $params['owner'] = $ownerId;
-        }
         if ($status === 'active' || $status === 'hidden') {
             $clauses[] = 'p.is_active = :active';
             $params['active'] = $status === 'active' ? 1 : 0;
@@ -249,9 +245,9 @@ final class ProductRepository extends BaseRepository
         return [$clauses === [] ? '' : 'WHERE ' . implode(' AND ', $clauses), $params];
     }
 
-    public function adminCount(string $search, int $categoryId, int $ownerId, string $status): int
+    public function adminCount(string $search, int $categoryId, string $status): int
     {
-        [$where, $params] = $this->adminWhere($search, $categoryId, $ownerId, $status);
+        [$where, $params] = $this->adminWhere($search, $categoryId, $status);
 
         return (int) $this->fetchValue(
             "SELECT COUNT(*) FROM products p LEFT JOIN brands b ON b.id = p.brand_id {$where}",
@@ -260,18 +256,16 @@ final class ProductRepository extends BaseRepository
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function adminList(string $search, int $categoryId, int $ownerId, string $status, int $limit, int $offset): array
+    public function adminList(string $search, int $categoryId, string $status, int $limit, int $offset): array
     {
-        [$where, $params] = $this->adminWhere($search, $categoryId, $ownerId, $status);
+        [$where, $params] = $this->adminWhere($search, $categoryId, $status);
         $params['limit'] = $limit;
         $params['offset'] = $offset;
 
         return $this->fetchAll(
-            "SELECT p.*, c.name AS category_name, b.name AS brand_name, COALESCE(pr.full_name, u.email) AS owner_name
+            "SELECT p.*, c.name AS category_name, b.name AS brand_name
              FROM products p
              JOIN categories c ON c.id = p.category_id
-             JOIN users u ON u.id = p.created_by
-             LEFT JOIN user_profiles pr ON pr.user_id = u.id
              LEFT JOIN brands b ON b.id = p.brand_id
              {$where} ORDER BY p.id DESC LIMIT :limit OFFSET :offset",
             $params

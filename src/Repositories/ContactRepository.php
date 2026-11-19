@@ -6,11 +6,25 @@ namespace App\Repositories;
 
 final class ContactRepository extends BaseRepository
 {
-    public function create(string $fullName, ?string $email, ?string $phone, string $message): void
+    public function create(string $fullName, ?string $email, ?string $phone, string $message, ?int $userId = null): void
     {
         $this->execute(
-            'INSERT INTO contacts (full_name, email, phone, message) VALUES (?, ?, ?, ?)',
-            [$fullName, $email, $phone, $message]
+            'INSERT INTO contacts (user_id, full_name, email, phone, message) VALUES (?, ?, ?, ?, ?)',
+            [$userId, $fullName, $email, $phone, $message]
+        );
+    }
+
+    public function countByUser(int $userId): int
+    {
+        return (int) $this->fetchValue('SELECT COUNT(*) FROM contacts WHERE user_id = ?', [$userId]);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listByUser(int $userId, int $limit, int $offset): array
+    {
+        return $this->fetchAll(
+            'SELECT * FROM contacts WHERE user_id = :uid ORDER BY id DESC LIMIT :limit OFFSET :offset',
+            ['uid' => $userId, 'limit' => $limit, 'offset' => $offset]
         );
     }
 
@@ -54,5 +68,13 @@ final class ContactRepository extends BaseRepository
     public function setStatus(int $id, string $status): void
     {
         $this->execute('UPDATE contacts SET status = ? WHERE id = ?', [$status, $id]);
+    }
+
+    public function reply(int $id, ?string $reply): void
+    {
+        $this->execute(
+            'UPDATE contacts SET admin_reply = ?, admin_replied_at = ?, status = IF(? IS NOT NULL, \'replied\', status) WHERE id = ?',
+            [$reply, $reply !== null ? date('Y-m-d H:i:s') : null, $reply, $id]
+        );
     }
 }

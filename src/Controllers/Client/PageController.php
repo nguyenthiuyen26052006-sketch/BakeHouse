@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Client;
 
 use App\Controllers\BaseController;
+use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Validator;
@@ -78,7 +79,8 @@ final class PageController extends BaseController
             trim((string) $input['full_name']),
             trim((string) ($input['email'] ?? '')) ?: null,
             trim((string) ($input['phone'] ?? '')) ?: null,
-            trim((string) $input['message'])
+            trim((string) $input['message']),
+            Auth::id()
         );
         $this->flash('success', 'Cảm ơn bạn! Chúng tôi sẽ phản hồi sớm nhất.');
 

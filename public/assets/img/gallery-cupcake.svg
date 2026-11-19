@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Cupcake">
+  <rect width="400" height="300" fill="#ecddc4"/>
+  <g transform="translate(200,165)">
+    <path d="M-70 10 L-55 90 L55 90 L70 10 Z" fill="#9b4a1b"/>
+    <path d="M-70 10 L70 10 L60 30 L-60 30 Z" fill="#c9944a"/>
+    <path d="M-80 -10c0-35 35-55 80-55s80 20 80 55c0 20-25 35-80 35s-80-15-80-35z" fill="#fff" />
+    <path d="M-80 -10c0-35 35-55 80-55s80 20 80 55c0 18-25 32-80 32s-80-14-80-32z" fill="#f7e3ea"/>
+    <circle cx="0" cy="-80" r="12" fill="#9b4a1b"/>
+  </g>
+  <g fill="#9b4a1b" opacity=".5"><circle cx="60" cy="60" r="4"/><circle cx="330" cy="80" r="5"/><circle cx="340" cy="230" r="4"/></g>
+</svg>

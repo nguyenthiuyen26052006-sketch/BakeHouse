@@ -6,7 +6,12 @@ $currentMax = $filters['max_price'] > 0 ? $filters['max_price'] : $sliderMax;
 partial('hero', ['heroTitle' => 'Sản Phẩm', 'crumbs' => [['Trang chủ', '/'], ['Sản phẩm', null]]]);
 ?>
 <div class="container py-5">
-    <button class="bh-btn bh-btn--outline w-100 mb-4 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#bhFilters"><i class="bi bi-funnel"></i> Bộ lọc</button>
+    <div class="d-flex gap-2 mb-4">
+        <button class="bh-btn bh-btn--outline flex-grow-1 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#bhFilters"><i class="bi bi-funnel"></i> Bộ lọc</button>
+        <?php if ($filters['q'] !== '' || $filters['category'] !== '' || $filters['max_price'] > 0) : ?>
+            <a class="bh-btn bh-btn--outline" href="/products"><i class="bi bi-x-lg"></i> Xóa lọc</a>
+        <?php endif; ?>
+    </div>
     <div class="row g-4">
         <aside class="col-lg-3">
             <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="bhFilters">

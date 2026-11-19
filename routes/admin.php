@@ -10,6 +10,7 @@ use App\Controllers\Admin\ContactController;
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\OrderController;
 use App\Controllers\Admin\ProductController;
+use App\Controllers\Admin\ReportController;
 use App\Controllers\Admin\ReviewController;
 use App\Controllers\Admin\TagController;
 use App\Controllers\Admin\UserController;
@@ -24,7 +25,7 @@ $router->group('', [AdminMiddleware::class], static function (Router $router): v
     $router->post('/logout', [AuthController::class, 'logout']);
     $router->get('/', [DashboardController::class, 'index']);
 
-    // Products (multi-vendor: write actions are guarded by ProductPolicy in the controller)
+    // Products (write actions are guarded by ProductPolicy in the controller)
     $router->get('/products', [ProductController::class, 'index']);
     $router->get('/products/create', [ProductController::class, 'create']);
     $router->post('/products', [ProductController::class, 'store']);
@@ -60,10 +61,15 @@ $router->group('', [AdminMiddleware::class], static function (Router $router): v
     $router->post('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     $router->post('/orders/{id}/confirm-payment', [OrderController::class, 'confirmPayment']);
 
+    $router->get('/reports', [ReportController::class, 'index']);
+    $router->get('/reports/print', [ReportController::class, 'print']);
+
     $router->get('/reviews', [ReviewController::class, 'index']);
     $router->post('/reviews/{id}/toggle', [ReviewController::class, 'toggle']);
+    $router->post('/reviews/{id}/reply', [ReviewController::class, 'reply']);
     $router->post('/reviews/{id}/delete', [ReviewController::class, 'destroy']);
 
     $router->get('/contacts', [ContactController::class, 'index']);
     $router->post('/contacts/{id}/status', [ContactController::class, 'updateStatus']);
+    $router->post('/contacts/{id}/reply', [ContactController::class, 'reply']);
 });

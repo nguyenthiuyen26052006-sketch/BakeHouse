@@ -133,6 +133,28 @@
     update();
   }
 
+  // ---------- Show/hide password ----------
+  document.querySelectorAll('input[type="password"]').forEach(function (input) {
+    var wrap = document.createElement('div');
+    wrap.className = 'bh-password-field';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    input.classList.add('bh-password-field__input');
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'bh-password-field__toggle';
+    btn.setAttribute('aria-label', 'Hiện mật khẩu');
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
+    btn.addEventListener('click', function () {
+      var shown = input.type === 'text';
+      input.type = shown ? 'password' : 'text';
+      btn.setAttribute('aria-label', shown ? 'Hiện mật khẩu' : 'Ẩn mật khẩu');
+      btn.innerHTML = shown ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+    });
+    wrap.appendChild(btn);
+  });
+
   // ---------- Auto-submit selects ----------
   document.querySelectorAll('[data-autosubmit]').forEach(function (el) {
     el.addEventListener('change', function () { el.form.submit(); });

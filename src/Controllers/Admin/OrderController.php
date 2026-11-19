@@ -22,14 +22,13 @@ final class OrderController extends BaseController
 
     public function index(Request $request): Response
     {
-        $adminId = (int) Auth::id();
         $search = trim((string) $request->getQuery('q', ''));
         $status = (string) $request->getQuery('status', '');
-        $paginator = Paginator::fromRequest($request, $this->orders->adminCount($adminId, $search, $status), 10);
+        $paginator = Paginator::fromRequest($request, $this->orders->adminCount($search, $status), 10);
 
         return $this->render('admin.orders.index', [
             'title' => 'Đơn hàng',
-            'rows' => $this->orders->adminList($adminId, $search, $status, $paginator->getLimit(), $paginator->getOffset()),
+            'rows' => $this->orders->adminList($search, $status, $paginator->getLimit(), $paginator->getOffset()),
             'paginator' => $paginator,
             'search' => $search,
             'status' => $status,
@@ -38,9 +37,8 @@ final class OrderController extends BaseController
 
     public function show(Request $request, string $id): Response
     {
-        $adminId = (int) Auth::id();
         $order = $this->orders->findById((int) $id);
-        if ($order === null || !$this->orders->hasVendor((int) $id, $adminId)) {
+        if ($order === null) {
             return ErrorHandler::render(404, $request);
         }
 
@@ -52,15 +50,14 @@ final class OrderController extends BaseController
             'customer' => $customer,
             'items' => $this->orders->items((int) $id),
             'histories' => $this->orders->histories((int) $id),
-            'adminId' => $adminId,
         ], 'layouts.admin');
     }
 
     public function updateStatus(Request $request, string $id): Response
     {
         try {
-            (new OrderService())->advanceVendorItems((int) $id, (int) Auth::id(), (string) $request->getInput('status'));
-            $this->flash('success', 'Đã cập nhật trạng thái đơn hàng.');
+            (new OrderService())->advanceOrder((int) $id, (int) Auth::id(), (string) $request->getInput('status'));
+            $this->flash('success', 'Cập nhật trạng thái thành công.');
         } catch (DomainException $e) {
             $this->flash('danger', $e->getMessage());
         }

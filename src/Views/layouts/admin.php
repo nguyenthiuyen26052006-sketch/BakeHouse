@@ -6,6 +6,7 @@ $nav = [
     ['/admin', 'Tổng quan', 'bi-speedometer2', true],
     ['/admin/products', 'Nguyên vật liệu', 'bi-basket2', false],
     ['/admin/orders', 'Đơn hàng', 'bi-receipt', false],
+    ['/admin/reports', 'In báo cáo', 'bi-printer', false],
     ['group', 'Danh mục chung'],
     ['/admin/categories', 'Danh mục', 'bi-grid', false],
     ['/admin/brands', 'Thương hiệu', 'bi-award', false],
@@ -61,7 +62,7 @@ $renderNav = static function () use ($nav, $path): void {
                 <h1 class="h4 m-0 text-truncate"><?= e($title ?? '') ?></h1>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <a class="small text-decoration-none d-none d-md-inline" href="/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Xem website</a>
+                <a class="small text-decoration-none d-none d-md-inline" href="/"><i class="bi bi-house-door"></i> Xem website</a>
                 <span class="small d-none d-sm-inline"><i class="bi bi-person-circle"></i> <?= e($admin['full_name'] ?: $admin['email']) ?></span>
                 <form method="post" action="/admin/logout"><?= csrf_field() ?><button class="bh-btn bh-btn--outline bh-btn--sm" type="submit" aria-label="Đăng xuất"><i class="bi bi-box-arrow-right"></i><span class="d-none d-sm-inline"> Đăng xuất</span></button></form>
             </div>

@@ -21,7 +21,7 @@ partial('hero', ['heroTitle' => 'Đơn hàng ' . $order['order_code'], 'crumbs' 
             <div class="bh-panel">
                 <h5 class="mb-3">Sản phẩm</h5>
                 <table class="bh-table bh-table--stack">
-                    <thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th><th>Trạng thái</th></tr></thead>
+                    <thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th><th>Thành tiền</th><th>Trạng thái</th><th></th></tr></thead>
                     <tbody>
                     <?php foreach ($items as $item) : ?>
                         <tr>
@@ -30,6 +30,11 @@ partial('hero', ['heroTitle' => 'Đơn hàng ' . $order['order_code'], 'crumbs' 
                             <td data-label="SL"><?= (int) $item['quantity'] ?></td>
                             <td data-label="Thành tiền"><?= e(format_vnd((int) $item['unit_price'] * (int) $item['quantity'])) ?></td>
                             <td data-label="Trạng thái"><?= status_badge($item['status']) ?></td>
+                            <td data-label="">
+                                <?php if ($item['status'] === 'delivered' && $item['product_slug']) : ?>
+                                    <a class="bh-btn bh-btn--outline bh-btn--sm" href="/products/<?= e($item['product_slug']) ?>#reviews"><i class="bi bi-star"></i> Đánh giá</a>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

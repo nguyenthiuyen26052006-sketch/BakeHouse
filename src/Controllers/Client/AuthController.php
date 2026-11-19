@@ -98,9 +98,16 @@ final class AuthController extends BaseController
         return $this->redirect('/');
     }
 
+    private const RESET_SESSION_KEY = 'pwd_reset_user_id';
+    private const RESET_EXPIRES_KEY = 'pwd_reset_expires';
+    private const RESET_TTL_SECONDS = 600;
+
     public function showForgot(Request $request): Response
     {
-        return $this->render('client.auth.forgot-password', ['title' => 'Quên mật khẩu']);
+        return $this->render('client.auth.forgot-password', [
+            'title' => 'Quên mật khẩu',
+            'step' => $this->pendingResetUserId() !== null ? 'reset' : 'identity',
+        ]);
     }
 
     public function forgot(Request $request): Response
@@ -109,39 +116,55 @@ final class AuthController extends BaseController
         if (!$validator->validate()) {
             return $this->redirectWithErrors($request, '/forgot-password', $validator->errors());
         }
-        $this->auth->sendPasswordReset((string) $request->getInput('identity'));
-        $this->flash('success', 'Nếu tài khoản tồn tại, liên kết đặt lại mật khẩu đã được gửi (môi trường dev: xem storage/logs/mail.log).');
+
+        $user = $this->auth->findUserForReset((string) $request->getInput('identity'));
+        if ($user === null) {
+            $this->flash('danger', 'Không tìm thấy tài khoản với email hoặc số điện thoại này.');
+
+            return $this->redirect('/forgot-password');
+        }
+
+        Session::set(self::RESET_SESSION_KEY, (int) $user['id']);
+        Session::set(self::RESET_EXPIRES_KEY, time() + self::RESET_TTL_SECONDS);
 
         return $this->redirect('/forgot-password');
     }
 
-    public function showReset(Request $request, string $token): Response
+    public function resetDirect(Request $request): Response
     {
-        if (!$this->auth->isResetTokenValid($token)) {
-            $this->flash('danger', 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+        $userId = $this->pendingResetUserId();
+        if ($userId === null) {
+            $this->flash('danger', 'Phiên đặt lại mật khẩu đã hết hạn, vui lòng thử lại.');
 
             return $this->redirect('/forgot-password');
         }
 
-        return $this->render('client.auth.reset-password', ['title' => 'Đặt lại mật khẩu', 'token' => $token]);
-    }
-
-    public function reset(Request $request, string $token): Response
-    {
         $validator = new Validator($request->getAllInput(), ['password' => 'required|password|confirmed']);
         if (!$validator->validate()) {
-            return $this->redirectWithErrors($request, '/reset-password/' . $token, $validator->errors());
+            return $this->redirectWithErrors($request, '/forgot-password', $validator->errors());
         }
-        try {
-            $this->auth->resetPassword($token, (string) $request->getInput('password'));
-        } catch (DomainException $e) {
-            $this->flash('danger', $e->getMessage());
 
-            return $this->redirect('/forgot-password');
-        }
-        $this->flash('success', 'Đặt lại mật khẩu thành công. Hãy đăng nhập.');
+        $this->auth->resetPasswordForUser($userId, (string) $request->getInput('password'));
+        Session::remove(self::RESET_SESSION_KEY);
+        Session::remove(self::RESET_EXPIRES_KEY);
+        $this->flash('success', 'Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.');
 
         return $this->redirect('/login');
+    }
+
+    private function pendingResetUserId(): ?int
+    {
+        $expires = Session::get(self::RESET_EXPIRES_KEY);
+        if ($expires === null || time() > (int) $expires) {
+            Session::remove(self::RESET_SESSION_KEY);
+            Session::remove(self::RESET_EXPIRES_KEY);
+
+            return null;
+        }
+
+        $id = Session::get(self::RESET_SESSION_KEY);
+
+        return $id === null ? null : (int) $id;
     }
 
     private function isValidIdentity(string $identity): bool

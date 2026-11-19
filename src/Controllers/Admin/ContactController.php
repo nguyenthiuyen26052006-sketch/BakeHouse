@@ -41,4 +41,13 @@ final class ContactController extends BaseController
 
         return $this->redirectBack('/admin/contacts');
     }
+
+    public function reply(Request $request, string $id): Response
+    {
+        $reply = trim((string) $request->getInput('admin_reply'));
+        $this->contacts->reply((int) $id, $reply !== '' ? $reply : null);
+        $this->flash('success', $reply !== '' ? 'Đã lưu phản hồi.' : 'Đã xóa phản hồi.');
+
+        return $this->redirectBack('/admin/contacts');
+    }
 }

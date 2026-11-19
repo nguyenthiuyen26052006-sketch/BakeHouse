@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Phới và tô trộn">
+  <rect width="400" height="300" fill="#ecddc4"/>
+  <g transform="translate(200,170)">
+    <path d="M-120 0c0 50 54 90 120 90s120-40 120-90z" fill="#c9944a"/>
+    <ellipse cx="0" cy="0" rx="120" ry="26" fill="#dba85c"/>
+    <ellipse cx="0" cy="0" rx="100" ry="18" fill="#f3e9db"/>
+  </g>
+  <g transform="translate(240,70) rotate(20)" stroke="#9b4a1b" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M0 0 L0 60"/>
+    <path d="M0 60c-18 0-28 18-24 42"/>
+    <path d="M0 60c-6 0-14 18-10 46"/>
+    <path d="M0 60c6 0 14 18 10 46"/>
+    <path d="M0 60c18 0 28 18 24 42"/>
+  </g>
+</svg>

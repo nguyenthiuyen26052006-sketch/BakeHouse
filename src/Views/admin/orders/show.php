@@ -1,18 +1,16 @@
-<?php /** @var array $order */ /** @var ?array $customer */ /** @var array $items */ /** @var array $histories */ /** @var int $adminId */
-$myItems = array_filter($items, static fn (array $i): bool => (int) $i['vendor_id'] === $adminId);
-$minRank = min(array_map(static fn (array $i): int => \App\Enums\OrderStatus::from($i['status'])->rank(), $myItems));
-$myTotal = array_sum(array_map(static fn (array $i): int => (int) $i['unit_price'] * (int) $i['quantity'], $myItems)); ?>
+<?php /** @var array $order */ /** @var ?array $customer */ /** @var array $items */ /** @var array $histories */
+$currentStatus = \App\Enums\OrderStatus::from($order['status']);
+$nextStatus = $currentStatus->next(); ?>
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="bh-panel mb-4">
             <div class="d-flex justify-content-between flex-wrap gap-2 mb-3"><h5 class="mb-0">Sản phẩm trong đơn</h5><?= status_badge($order['status']) ?></div>
-            <div class="table-responsive"><table class="table align-middle bh-table"><thead><tr><th>Sản phẩm</th><th>Người bán</th><th>Đơn giá</th><th>SL</th><th>Trạng thái</th></tr></thead><tbody>
-            <?php foreach ($items as $item) : $mine = (int) $item['vendor_id'] === $adminId; ?>
-                <tr class="<?= $mine ? '' : 'text-muted' ?>"><td><?= e($item['product_name']) ?></td><td><?= $mine ? '<span class="badge bg-warning text-dark">Tôi</span>' : e($item['vendor_name']) ?></td>
-                    <td><?= e(format_vnd((int) $item['unit_price'])) ?></td><td><?= (int) $item['quantity'] ?></td><td><?= status_badge($item['status']) ?></td></tr>
+            <div class="table-responsive"><table class="table align-middle bh-table"><thead><tr><th>Sản phẩm</th><th>Đơn giá</th><th>SL</th></tr></thead><tbody>
+            <?php foreach ($items as $item) : ?>
+                <tr><td><?= e($item['product_name']) ?></td>
+                    <td><?= e(format_vnd((int) $item['unit_price'])) ?></td><td><?= (int) $item['quantity'] ?></td></tr>
             <?php endforeach; ?></tbody></table></div>
             <div class="d-flex justify-content-between"><span>Phí vận chuyển</span><span><?= e(format_vnd((int) $order['shipping_fee'])) ?></span></div>
-            <div class="d-flex justify-content-between"><span>Phần của tôi</span><strong><?= e(format_vnd($myTotal)) ?></strong></div>
             <div class="d-flex justify-content-between fs-5"><span>Tổng đơn</span><strong class="bh-price"><?= e(format_vnd((int) $order['total_amount'])) ?></strong></div>
         </div>
         <div class="bh-panel"><h5>Lịch sử xử lý</h5>
@@ -33,15 +31,15 @@ $myTotal = array_sum(array_map(static fn (array $i): int => (int) $i['unit_price
                 <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/confirm-payment" data-confirm="Xác nhận đã nhận đủ tiền chuyển khoản cho đơn này?"><?= csrf_field() ?>
                     <button class="bh-btn bh-btn--primary w-100" type="submit"><i class="bi bi-cash-coin"></i> Xác nhận đã nhận tiền</button></form>
             <?php endif; ?></div>
-        <div class="bh-panel"><h5>Cập nhật trạng thái (sản phẩm của tôi)</h5>
-            <?php if ($minRank >= 3) : ?><p class="bh-muted mb-0">Các sản phẩm của bạn trong đơn đã được giao.</p>
+        <div class="bh-panel"><h5>Cập nhật trạng thái</h5>
+            <?php if ($nextStatus === null) : ?><p class="bh-muted mb-0">Đơn hàng đã hoàn tất.</p>
             <?php else : ?>
                 <form method="post" action="/admin/orders/<?= (int) $order['id'] ?>/status"><?= csrf_field() ?>
                     <select class="form-select mb-3" name="status">
-                        <?php foreach (\App\Enums\OrderStatus::cases() as $s) : if ($s->rank() > $minRank) : ?><option value="<?= e($s->value) ?>"><?= e($s->label()) ?></option><?php endif; endforeach; ?>
+                        <option value="<?= e($nextStatus->value) ?>"><?= e($nextStatus->label()) ?></option>
                     </select>
                     <button class="bh-btn bh-btn--dark w-100" type="submit">Cập nhật</button>
-                    <div class="form-text">Chỉ được chuyển tiến, không thể quay lại.</div>
+                    <div class="form-text">Chỉ được chuyển sang trạng thái kế tiếp liền kề, không được nhảy cóc hoặc quay lại.</div>
                 </form>
             <?php endif; ?></div>
         <a class="bh-btn bh-btn--outline mt-3" href="/admin/orders">Quay lại</a>

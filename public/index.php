@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Env;
 use App\Core\ErrorHandler;
 use App\Core\Request;
 use App\Core\Router;
@@ -24,6 +25,8 @@ if (is_file(BASE_PATH . '/vendor/autoload.php')) {
     });
 }
 require_once BASE_PATH . '/src/Helpers/functions.php';
+
+Env::load(BASE_PATH . '/.env');
 
 ErrorHandler::register();
 $request = Request::capture();

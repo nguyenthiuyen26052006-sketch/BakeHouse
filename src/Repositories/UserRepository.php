@@ -73,28 +73,6 @@ final class UserRepository extends BaseRepository
         $this->execute('UPDATE users SET password_hash = ? WHERE id = ?', [$hash, $userId]);
     }
 
-    public function createPasswordReset(int $userId, string $tokenHash, string $expiresAt): void
-    {
-        $this->execute('DELETE FROM password_resets WHERE user_id = ?', [$userId]);
-        $this->execute(
-            'INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
-            [$userId, $tokenHash, $expiresAt]
-        );
-    }
-
-    public function findValidReset(string $tokenHash): ?array
-    {
-        return $this->fetchOne(
-            'SELECT * FROM password_resets WHERE token_hash = ? AND expires_at > NOW()',
-            [$tokenHash]
-        );
-    }
-
-    public function deleteResets(int $userId): void
-    {
-        $this->execute('DELETE FROM password_resets WHERE user_id = ?', [$userId]);
-    }
-
     /** @return array{0: string, 1: array<string, mixed>} */
     private function adminWhere(string $search, string $role, string $active): array
     {

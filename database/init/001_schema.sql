@@ -67,7 +67,6 @@ CREATE TABLE products (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     category_id BIGINT UNSIGNED NOT NULL,
     brand_id BIGINT UNSIGNED NULL,
-    created_by BIGINT UNSIGNED NOT NULL,
     name VARCHAR(190) NOT NULL,
     slug VARCHAR(210) NOT NULL,
     description TEXT NULL,
@@ -85,12 +84,10 @@ CREATE TABLE products (
     UNIQUE KEY uq_products_slug (slug),
     KEY idx_products_category (category_id),
     KEY idx_products_brand (brand_id),
-    KEY idx_products_created_by (created_by),
     KEY idx_products_active_created (is_active, created_at),
     FULLTEXT KEY ft_products_name (name),
     CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories (id),
-    CONSTRAINT fk_products_brand FOREIGN KEY (brand_id) REFERENCES brands (id) ON DELETE SET NULL,
-    CONSTRAINT fk_products_creator FOREIGN KEY (created_by) REFERENCES users (id)
+    CONSTRAINT fk_products_brand FOREIGN KEY (brand_id) REFERENCES brands (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE product_images (
@@ -163,7 +160,6 @@ CREATE TABLE order_items (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_id BIGINT UNSIGNED NOT NULL,
     product_id BIGINT UNSIGNED NOT NULL,
-    vendor_id BIGINT UNSIGNED NOT NULL,
     product_name VARCHAR(190) NOT NULL,
     unit_price INT UNSIGNED NOT NULL,
     quantity INT UNSIGNED NOT NULL,
@@ -173,10 +169,9 @@ CREATE TABLE order_items (
     PRIMARY KEY (id),
     KEY idx_order_items_order (order_id),
     KEY idx_order_items_product (product_id),
-    KEY idx_order_items_vendor_status (vendor_id, status),
+    KEY idx_order_items_status (status),
     CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
-    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products (id),
-    CONSTRAINT fk_order_items_vendor FOREIGN KEY (vendor_id) REFERENCES users (id)
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE order_status_histories (
@@ -199,6 +194,8 @@ CREATE TABLE reviews (
     rating TINYINT UNSIGNED NOT NULL,
     comment TEXT NULL,
     is_hidden TINYINT(1) NOT NULL DEFAULT 0,
+    admin_reply TEXT NULL,
+    admin_replied_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -222,15 +219,20 @@ CREATE TABLE banners (
 
 CREATE TABLE contacts (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NULL,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(190) NULL,
     phone VARCHAR(20) NULL,
     message TEXT NOT NULL,
     status ENUM('new', 'read', 'replied') NOT NULL DEFAULT 'new',
+    admin_reply TEXT NULL,
+    admin_replied_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_contacts_status (status)
+    KEY idx_contacts_status (status),
+    KEY idx_contacts_user (user_id),
+    CONSTRAINT fk_contacts_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE password_resets (

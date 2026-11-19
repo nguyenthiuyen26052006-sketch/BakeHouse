@@ -1,7 +1,7 @@
 <?php partial('hero', ['heroTitle' => 'Giới thiệu', 'crumbs' => [['Trang chủ', '/'], ['Giới thiệu', null]]]); ?>
 <div class="container py-5">
     <div class="row g-5 align-items-center">
-        <div class="col-lg-6"><img class="img-fluid rounded-4" src="<?= e(img_url(null)) ?>" alt="BakeHouse" loading="lazy"></div>
+        <div class="col-lg-6"><img class="img-fluid rounded-4" src="/assets/img/about-story.svg" alt="Câu chuyện BakeHouse" loading="lazy"></div>
         <div class="col-lg-6">
             <h2 class="mb-3">Câu chuyện của BakeHouse</h2>
             <p>BakeHouse ra đời từ niềm đam mê bếp bánh. Chúng tôi chọn lọc từng loại bột, đường, bơ, hương liệu và dụng cụ để bạn luôn có nguyên liệu tốt nhất cho mỗi mẻ bánh.</p>

@@ -42,6 +42,20 @@ final class ReviewController extends BaseController
         return $this->redirectBack('/admin/reviews');
     }
 
+    public function reply(Request $request, string $id): Response
+    {
+        $review = $this->reviews->find((int) $id);
+        if ($review === null) {
+            return $this->redirectBack('/admin/reviews');
+        }
+
+        $reply = trim((string) $request->getInput('admin_reply'));
+        $this->reviews->reply((int) $id, $reply !== '' ? $reply : null);
+        $this->flash('success', $reply !== '' ? 'Đã lưu phản hồi.' : 'Đã xóa phản hồi.');
+
+        return $this->redirectBack('/admin/reviews');
+    }
+
     public function destroy(Request $request, string $id): Response
     {
         $this->reviews->deleteById((int) $id);

@@ -1,7 +1,7 @@
 <?php
 $navItems = [
-    ['/', 'Home', '/'], ['/about', 'About', '/about'], ['/products', 'Products', '/products'],
-    ['/gallery', 'Gallery', '/gallery'], ['/blog', 'Blog', '/blog'], ['/contact', 'Contact', '/contact'],
+    ['/', 'Trang chủ', '/'], ['/about', 'Giới thiệu', '/about'], ['/products', 'Sản phẩm', '/products'],
+    ['/gallery', 'Thư viện', '/gallery'], ['/blog', 'Blog', '/blog'], ['/contact', 'Liên hệ', '/contact'],
 ];
 $user = auth_user();
 $cartCount = $user ? cart_count() : 0;
@@ -15,20 +15,31 @@ $cartCount = $user ? cart_count() : 0;
             <?php endforeach; ?>
         </nav>
         <div class="d-flex align-items-center gap-2">
+            <a class="bh-icon-btn" href="/products" aria-label="Tìm kiếm sản phẩm"><i class="bi bi-search"></i></a>
             <?php if ($user) : ?>
                 <div class="dropdown">
                     <button class="bh-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Tài khoản"><i class="bi bi-person-fill"></i></button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><h6 class="dropdown-header"><?= e($user['full_name'] ?: ($user['email'] ?? $user['phone'])) ?></h6></li>
-                        <li><a class="dropdown-item" href="/account">Tài khoản của tôi</a></li>
-                        <li><a class="dropdown-item" href="/orders">Đơn hàng của tôi</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end bh-account-menu">
+                        <li class="bh-account-menu__header">
+                            <div class="bh-account-menu__avatar"><i class="bi bi-person-fill"></i></div>
+                            <div class="min-w-0">
+                                <div class="bh-account-menu__name"><?= e($user['full_name'] ?: ($user['email'] ?? $user['phone'])) ?></div>
+                                <?php if ($user['full_name'] && ($user['email'] ?? $user['phone'])) : ?>
+                                    <div class="bh-account-menu__sub"><?= e($user['email'] ?? $user['phone']) ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider bh-account-menu__divider"></li>
+                        <li><a class="dropdown-item bh-account-menu__item" href="/account"><i class="bi bi-person-circle"></i> Tài khoản của tôi</a></li>
+                        <li><a class="dropdown-item bh-account-menu__item" href="/orders"><i class="bi bi-receipt"></i> Đơn hàng của tôi</a></li>
+                        <li><a class="dropdown-item bh-account-menu__item" href="/contacts"><i class="bi bi-envelope"></i> Liên hệ của tôi</a></li>
                         <?php if (\App\Core\Auth::isAdmin()) : ?>
-                            <li><a class="dropdown-item" href="/admin">Trang quản trị</a></li>
+                            <li><a class="dropdown-item bh-account-menu__item" href="/admin"><i class="bi bi-speedometer2"></i> Trang quản trị</a></li>
                         <?php endif; ?>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><hr class="dropdown-divider bh-account-menu__divider"></li>
                         <li>
                             <form method="post" action="/logout"><?= csrf_field() ?>
-                                <button class="dropdown-item" type="submit">Đăng xuất</button>
+                                <button class="dropdown-item bh-account-menu__item bh-account-menu__item--danger" type="submit"><i class="bi bi-box-arrow-right"></i> Đăng xuất</button>
                             </form>
                         </li>
                     </ul>
@@ -44,6 +55,7 @@ $cartCount = $user ? cart_count() : 0;
             <button class="bh-icon-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#bhMenu" aria-label="Menu"><i class="bi bi-list"></i></button>
         </div>
     </div>
+    <?php if ($user) : ?>
     <div class="bh-searchbar">
         <div class="container">
             <form action="/products" method="get" role="search" class="bh-search">
@@ -52,6 +64,7 @@ $cartCount = $user ? cart_count() : 0;
             </form>
         </div>
     </div>
+    <?php endif; ?>
 </header>
 <div class="offcanvas offcanvas-start bh-offcanvas" tabindex="-1" id="bhMenu">
     <div class="offcanvas-header">

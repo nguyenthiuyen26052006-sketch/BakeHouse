@@ -24,10 +24,10 @@ enum OrderStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Chờ xác nhận',
-            self::Processing => 'Đang xử lý',
+            self::Pending => 'Chờ xử lý',
+            self::Processing => 'Đã xác nhận',
             self::Shipped => 'Đang giao',
-            self::Delivered => 'Đã giao',
+            self::Delivered => 'Hoàn tất',
         };
     }
 
@@ -41,33 +41,20 @@ enum OrderStatus: string
         };
     }
 
+    /** The single next status in the pipeline, or null if this is the last one. */
+    public function next(): ?self
+    {
+        return match ($this) {
+            self::Pending => self::Processing,
+            self::Processing => self::Shipped,
+            self::Shipped => self::Delivered,
+            self::Delivered => null,
+        };
+    }
+
     /** @return array<int, string> */
     public static function values(): array
     {
         return array_map(static fn (self $case): string => $case->value, self::cases());
-    }
-
-    /**
-     * Derive the overall order status from its item statuses.
-     *
-     * @param array<int, string> $itemStatuses
-     */
-    public static function derive(array $itemStatuses): self
-    {
-        $ranks = array_map(static fn (string $s): int => self::from($s)->rank(), $itemStatuses);
-        if ($ranks === []) {
-            return self::Pending;
-        }
-        if (min($ranks) >= self::Delivered->rank()) {
-            return self::Delivered;
-        }
-        if (min($ranks) >= self::Shipped->rank()) {
-            return self::Shipped;
-        }
-        if (max($ranks) > self::Pending->rank()) {
-            return self::Processing;
-        }
-
-        return self::Pending;
     }
 }

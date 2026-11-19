@@ -31,21 +31,17 @@ final class ProductController extends BaseController
         $search = trim((string) $request->getQuery('q', ''));
         $categoryId = (int) $request->getQuery('category', 0);
         $status = (string) $request->getQuery('status', '');
-        $scope = (string) $request->getQuery('scope', 'mine');
-        $ownerId = $scope === 'all' ? 0 : (int) Auth::id();
 
-        $paginator = Paginator::fromRequest($request, $this->products->adminCount($search, $categoryId, $ownerId, $status), self::PER_PAGE);
+        $paginator = Paginator::fromRequest($request, $this->products->adminCount($search, $categoryId, $status), self::PER_PAGE);
 
         return $this->render('admin.products.index', [
             'title' => 'Nguyên vật liệu',
-            'rows' => $this->products->adminList($search, $categoryId, $ownerId, $status, $paginator->getLimit(), $paginator->getOffset()),
+            'rows' => $this->products->adminList($search, $categoryId, $status, $paginator->getLimit(), $paginator->getOffset()),
             'paginator' => $paginator,
             'categories' => (new CategoryRepository())->allForSelect(),
             'search' => $search,
             'categoryId' => $categoryId,
             'status' => $status,
-            'scope' => $scope,
-            'adminId' => (int) Auth::id(),
         ], 'layouts.admin');
     }
 
@@ -61,7 +57,6 @@ final class ProductController extends BaseController
             'product' => $product,
             'images' => $this->products->images((int) $id),
             'tags' => $this->products->tags((int) $id),
-            'canModify' => ProductPolicy::canModify(Auth::user(), $product),
         ], 'layouts.admin');
     }
 
@@ -76,7 +71,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -94,7 +89,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -107,7 +102,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -130,7 +125,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -247,7 +242,6 @@ final class ProductController extends BaseController
             $this->flash('success', 'Đã cập nhật sản phẩm.');
         } else {
             $data['slug'] = $this->products->slugFor($data['name'], null);
-            $data['created_by'] = (int) Auth::id();
             $productId = $this->products->create($data, $tagIds);
             $this->flash('success', 'Đã thêm sản phẩm mới.');
         }
