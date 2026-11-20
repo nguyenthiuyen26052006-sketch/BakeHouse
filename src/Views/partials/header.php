@@ -15,8 +15,11 @@ $cartCount = $user ? cart_count() : 0;
             <?php endforeach; ?>
         </nav>
         <div class="d-flex align-items-center gap-2">
-            <a class="bh-icon-btn" href="/products" aria-label="Tìm kiếm sản phẩm"><i class="bi bi-search"></i></a>
             <?php if ($user) : ?>
+                <a class="bh-icon-btn" href="/cart" aria-label="Giỏ hàng">
+                    <i class="bi bi-cart-fill"></i>
+                    <span class="bh-cart-badge" style="<?= $cartCount > 0 ? '' : 'display:none' ?>"><?= $cartCount ?></span>
+                </a>
                 <div class="dropdown">
                     <button class="bh-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Tài khoản"><i class="bi bi-person-fill"></i></button>
                     <ul class="dropdown-menu dropdown-menu-end bh-account-menu">
@@ -41,10 +44,6 @@ $cartCount = $user ? cart_count() : 0;
                         </li>
                     </ul>
                 </div>
-                <a class="bh-icon-btn" href="/cart" aria-label="Giỏ hàng">
-                    <i class="bi bi-cart-fill"></i>
-                    <span class="bh-cart-badge" style="<?= $cartCount > 0 ? '' : 'display:none' ?>"><?= $cartCount ?></span>
-                </a>
             <?php else : ?>
                 <a class="bh-btn bh-btn--header bh-btn--light" href="/login">Đăng nhập</a>
                 <a class="bh-btn bh-btn--header bh-btn--primary" href="/register">Đăng ký</a>
