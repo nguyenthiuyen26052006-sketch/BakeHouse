@@ -33,9 +33,6 @@ $cartCount = $user ? cart_count() : 0;
                         <li><a class="dropdown-item bh-account-menu__item" href="/account"><i class="bi bi-person-circle"></i> Tài khoản của tôi</a></li>
                         <li><a class="dropdown-item bh-account-menu__item" href="/orders"><i class="bi bi-receipt"></i> Đơn hàng của tôi</a></li>
                         <li><a class="dropdown-item bh-account-menu__item" href="/contacts"><i class="bi bi-envelope"></i> Liên hệ của tôi</a></li>
-                        <?php if (\App\Core\Auth::isAdmin()) : ?>
-                            <li><a class="dropdown-item bh-account-menu__item" href="/admin"><i class="bi bi-speedometer2"></i> Trang quản trị</a></li>
-                        <?php endif; ?>
                         <li><hr class="dropdown-divider bh-account-menu__divider"></li>
                         <li>
                             <form method="post" action="/logout"><?= csrf_field() ?>

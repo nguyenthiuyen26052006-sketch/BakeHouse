@@ -52,6 +52,18 @@ final class Auth
         return (self::user()['role'] ?? null) === 'admin';
     }
 
+    /** Logged in with a non-admin account. */
+    public static function isCustomer(): bool
+    {
+        return self::check() && !self::isAdmin();
+    }
+
+    /** Where this visitor's "home" is: the back office for admins, the storefront for everyone else. */
+    public static function homeUrl(): string
+    {
+        return self::isAdmin() ? '/admin' : '/';
+    }
+
     public static function login(int $userId): void
     {
         Session::regenerate();

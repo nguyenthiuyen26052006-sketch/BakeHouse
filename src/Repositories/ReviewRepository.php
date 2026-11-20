@@ -64,16 +64,6 @@ final class ReviewRepository extends BaseRepository
         return $this->fetchOne('SELECT * FROM reviews WHERE id = ?', [$id]);
     }
 
-    public function setHidden(int $id, bool $hidden): void
-    {
-        $review = $this->find($id);
-        if ($review === null) {
-            return;
-        }
-        $this->execute('UPDATE reviews SET is_hidden = ? WHERE id = ?', [(int) $hidden, $id]);
-        $this->recalculate((int) $review['product_id']);
-    }
-
     public function reply(int $id, ?string $reply): void
     {
         $this->execute(
@@ -105,7 +95,11 @@ final class ReviewRepository extends BaseRepository
     }
 
     /** @return array{0: string, 1: array<string, mixed>} */
-    private function adminWhere(string $search, string $visibility): array
+    /**
+     * @param string $view '' | 'unanswered'
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private function adminWhere(string $search, string $view, int $rating): array
     {
         $clauses = [];
         $params = [];
@@ -113,17 +107,20 @@ final class ReviewRepository extends BaseRepository
             $clauses[] = '(pr.name LIKE :q OR r.comment LIKE :q2 OR u.email LIKE :q3)';
             $params['q'] = $params['q2'] = $params['q3'] = $this->likeTerm($search);
         }
-        if ($visibility === 'hidden' || $visibility === 'visible') {
-            $clauses[] = 'r.is_hidden = :hidden';
-            $params['hidden'] = $visibility === 'hidden' ? 1 : 0;
+        if ($rating >= 1 && $rating <= 5) {
+            $clauses[] = 'r.rating = :rating';
+            $params['rating'] = $rating;
+        }
+        if ($view === 'unanswered') {
+            $clauses[] = "(r.admin_reply IS NULL OR r.admin_reply = '')";
         }
 
         return [$clauses === [] ? '' : 'WHERE ' . implode(' AND ', $clauses), $params];
     }
 
-    public function adminCount(string $search, string $visibility): int
+    public function adminCount(string $search, string $view, int $rating): int
     {
-        [$where, $params] = $this->adminWhere($search, $visibility);
+        [$where, $params] = $this->adminWhere($search, $view, $rating);
 
         return (int) $this->fetchValue(
             "SELECT COUNT(*) FROM reviews r JOIN products pr ON pr.id = r.product_id JOIN users u ON u.id = r.user_id {$where}",
@@ -131,15 +128,27 @@ final class ReviewRepository extends BaseRepository
         );
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function adminList(string $search, string $visibility, int $limit, int $offset): array
+    /** Counts for the admin tabs. @return array<string, int> */
+    public function viewCounts(): array
     {
-        [$where, $params] = $this->adminWhere($search, $visibility);
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS total,
+                    COALESCE(SUM(admin_reply IS NULL OR admin_reply = ''), 0) AS unanswered
+             FROM reviews"
+        ) ?? [];
+
+        return ['all' => (int) ($row['total'] ?? 0), 'unanswered' => (int) ($row['unanswered'] ?? 0)];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function adminList(string $search, string $view, int $rating, int $limit, int $offset): array
+    {
+        [$where, $params] = $this->adminWhere($search, $view, $rating);
         $params['limit'] = $limit;
         $params['offset'] = $offset;
 
         return $this->fetchAll(
-            "SELECT r.*, pr.name AS product_name, pr.slug AS product_slug, u.email AS user_email,
+            "SELECT r.*, pr.name AS product_name, pr.slug AS product_slug, pr.image_path AS product_image, u.email AS user_email,
                     COALESCE(NULLIF(p.full_name, ''), u.email) AS author_name
              FROM reviews r
              JOIN products pr ON pr.id = r.product_id

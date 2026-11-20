@@ -38,6 +38,12 @@ final class OrderService
         if ($lines === []) {
             throw new DomainException('Giỏ hàng trống.');
         }
+        // Defence in depth: routes already keep admins out of the storefront, but an order must never be
+        // created for a back-office account whoever calls this service.
+        $buyer = (new \App\Repositories\UserRepository())->findById($userId);
+        if ($buyer === null || ($buyer['role'] ?? null) === 'admin') {
+            throw new DomainException('Tài khoản quản trị không thể đặt hàng.');
+        }
         ksort($lines); // consistent lock order prevents deadlocks
 
         return Database::transaction(function () use ($userId, $lines, $shipping, $payment, $fromCart): string {

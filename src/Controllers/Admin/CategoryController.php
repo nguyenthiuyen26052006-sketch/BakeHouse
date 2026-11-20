@@ -12,20 +12,18 @@ final class CategoryController extends AbstractResourceController
             'title' => 'Danh mục',
             'route' => 'categories',
             'table' => 'categories',
-            'search' => ['name', 'slug'],
+            'search' => ['name'],
             'slug_from' => 'name',
+            'product_fk' => 'category_id',
+            'block_delete_when_used' => true,
             'columns' => [
-                ['key' => 'image_path', 'label' => 'Ảnh', 'type' => 'image'],
-                ['key' => 'name', 'label' => 'Tên', 'type' => 'text'],
-                ['key' => 'slug', 'label' => 'Slug', 'type' => 'text'],
+                ['key' => 'name', 'label' => 'Tên danh mục', 'type' => 'text'],
+                ['key' => 'product_count', 'label' => 'Số sản phẩm', 'type' => 'number'],
                 ['key' => 'is_active', 'label' => 'Hiển thị', 'type' => 'bool'],
             ],
             'fields' => [
                 ['name' => 'name', 'label' => 'Tên danh mục', 'type' => 'text', 'rules' => 'required|max:120'],
-                ['name' => 'slug', 'label' => 'Slug (để trống để tự tạo)', 'type' => 'text', 'rules' => 'max:140'],
-                ['name' => 'description', 'label' => 'Mô tả', 'type' => 'textarea', 'rules' => 'max:2000'],
-                ['name' => 'image_path', 'label' => 'Hình ảnh', 'type' => 'image'],
-                ['name' => 'is_active', 'label' => 'Hiển thị', 'type' => 'checkbox'],
+                ['name' => 'is_active', 'label' => 'Hiển thị trên website', 'type' => 'checkbox'],
             ],
         ];
     }

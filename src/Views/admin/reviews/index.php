@@ -1,28 +1,67 @@
-<?php /** @var array $rows */ /** @var \App\Core\Paginator $paginator */ /** @var string $search */ /** @var string $visibility */
-partial('admin-filter', ['search' => $search, 'placeholder' => 'Tìm theo sản phẩm, nội dung, email…', 'selects' => ['visibility' => ['Tất cả', ['visible' => 'Đang hiển thị', 'hidden' => 'Đã ẩn'], $visibility]]]); ?>
-<div class="bh-panel p-0 table-responsive"><table class="table table-hover align-middle mb-0 bh-table">
-    <thead><tr><th>Sản phẩm</th><th>Người đánh giá</th><th>Sao</th><th>Nội dung</th><th>Phản hồi của shop</th><th>Ngày</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead><tbody>
-    <?php foreach ($rows as $r) : ?>
-        <tr><td><a href="/products/<?= e($r['product_slug']) ?>" target="_blank"><?= e($r['product_name']) ?></a></td><td><?= e($r['author_name']) ?></td><td><?= render_stars((float) $r['rating']) ?></td>
-            <td style="max-width:260px"><?= e($r['comment'] ?? '') ?></td>
-            <td style="min-width:260px">
-                <?php if (!empty($r['admin_reply'])) : ?>
-                    <p class="small mb-1"><i class="bi bi-chat-left-text text-warning"></i> <?= nl2br(e($r['admin_reply'])) ?></p>
-                <?php endif; ?>
-                <details>
-                    <summary class="small" style="cursor:pointer;color:var(--bh-color-caramel-text)"><?= !empty($r['admin_reply']) ? 'Sửa phản hồi' : 'Trả lời' ?></summary>
-                    <form class="mt-2" method="post" action="/admin/reviews/<?= (int) $r['id'] ?>/reply"><?= csrf_field() ?>
-                        <textarea class="form-control form-control-sm mb-2" name="admin_reply" rows="2" placeholder="Phản hồi đánh giá này…"><?= e($r['admin_reply'] ?? '') ?></textarea>
-                        <button class="bh-btn bh-btn--outline bh-btn--sm" type="submit">Lưu phản hồi</button>
-                    </form>
-                </details>
-            </td>
-            <td><?= e(date('d/m/Y', strtotime($r['created_at']))) ?></td>
-            <td><?= $r['is_hidden'] ? '<span class="badge bg-secondary">Đã ẩn</span>' : '<span class="badge bg-success">Hiển thị</span>' ?></td>
-            <td class="text-end text-nowrap">
-                <form class="d-inline" method="post" action="/admin/reviews/<?= (int) $r['id'] ?>/toggle"><?= csrf_field() ?><button class="bh-btn bh-btn--outline bh-btn--sm" type="submit"><?= $r['is_hidden'] ? 'Hiện' : 'Ẩn' ?></button></form>
-                <form class="d-inline" method="post" action="/admin/reviews/<?= (int) $r['id'] ?>/delete" data-confirm="Xóa vĩnh viễn đánh giá này?"><?= csrf_field() ?><button class="bh-btn bh-btn--dark bh-btn--sm" type="submit"><i class="bi bi-trash"></i></button></form></td></tr>
-    <?php endforeach; ?>
-    <?php if ($rows === []) : ?><tr><td colspan="8" class="text-center bh-muted py-4">Không có đánh giá.</td></tr><?php endif; ?>
-</tbody></table></div>
-<div class="mt-3"><?= $paginator->render() ?></div>
+<?php /** @var array $rows */ /** @var \App\Core\Paginator $paginator */ /** @var array $counts */ /** @var string $search */ /** @var string $view */ /** @var int $rating */
+partial('admin-tabs', [
+    'param' => 'reply', 'current' => $view,
+    'tabs' => ['' => 'Tất cả', 'none' => 'Chưa phản hồi'],
+    'counts' => ['' => $counts['all'], 'none' => $counts['unanswered']],
+    'alert' => ['none' => true],
+    'keep' => ['q' => $search, 'rating' => $rating ?: ''],
+]);
+partial('admin-filter', [
+    'search' => $search, 'placeholder' => 'Tìm theo sản phẩm, nội dung, email…',
+    'hidden' => ['reply' => $view],
+    'selects' => ['rating' => ['Mọi số sao', [5 => '5 sao', 4 => '4 sao', 3 => '3 sao', 2 => '2 sao', 1 => '1 sao'], $rating ?: '']],
+]); ?>
+<div class="adm-reviews">
+<?php foreach ($rows as $r) :
+    $hasReply = !empty($r['admin_reply']);
+    $stars = (int) $r['rating'];
+    $tone = $stars >= 4 ? 'high' : ($stars === 3 ? 'mid' : 'low');
+    $initial = mb_strtoupper(mb_substr(trim((string) $r['author_name']), 0, 1)) ?: '?'; ?>
+    <article class="adm-review is-<?= $tone ?>">
+        <aside class="adm-review__aside">
+            <img class="adm-review__img" src="<?= e(img_url($r['product_image'])) ?>" alt="" loading="lazy">
+            <div class="adm-review__prod">
+                <div class="adm-review__pname"><?= e($r['product_name']) ?></div>
+                <div class="adm-review__score"><strong><?= $stars ?>.0</strong><?= render_stars((float) $r['rating']) ?></div>
+            </div>
+        </aside>
+        <div class="adm-review__main">
+            <header class="adm-review__top">
+                <span class="adm-avatar" aria-hidden="true"><?= e($initial) ?></span>
+                <div class="adm-review__who">
+                    <strong><?= e($r['author_name']) ?></strong>
+                    <span class="adm-review__meta"><?= e($r['user_email']) ?> · <?= e(date('d/m/Y', strtotime($r['created_at']))) ?></span>
+                </div>
+                <?= $hasReply ? '<span class="adm-pill adm-pill--ok">Đã phản hồi</span>' : '<span class="adm-pill adm-pill--warn">Chưa phản hồi</span>' ?>
+                <form method="post" action="/admin/reviews/<?= (int) $r['id'] ?>/delete" data-confirm="Xóa vĩnh viễn đánh giá này?"><?= csrf_field() ?><button class="bh-btn bh-btn--danger bh-btn--sm adm-icon" type="submit" title="Xóa" aria-label="Xóa đánh giá"><i class="bi bi-trash"></i></button></form>
+            </header>
+            <p class="adm-review__text"><?= $r['comment'] !== null && $r['comment'] !== '' ? nl2br(e($r['comment'])) : '<span class="bh-muted">(Không có nội dung)</span>' ?></p>
+            <?php if ($hasReply) : ?>
+                <div class="adm-review__reply"><strong>Admin</strong><?php if (!empty($r['admin_replied_at'])) : ?> <span class="adm-review__meta">· <?= e(date('d/m/Y', strtotime($r['admin_replied_at']))) ?></span><?php endif; ?><br><?= nl2br(e($r['admin_reply'])) ?></div>
+            <?php endif; ?>
+            <details class="adm-reply">
+                <summary class="bh-btn <?= $hasReply ? 'bh-btn--outline' : 'bh-btn--primary' ?> bh-btn--sm"><i class="bi bi-reply"></i> <?= $hasReply ? 'Sửa phản hồi' : 'Phản hồi' ?></summary>
+                <form class="adm-reply__box" method="post" action="/admin/reviews/<?= (int) $r['id'] ?>/reply"><?= csrf_field() ?>
+                    <textarea id="reply-<?= (int) $r['id'] ?>" aria-label="Phản hồi gửi tới <?= e($r['author_name']) ?>" class="form-control" name="admin_reply" rows="4" maxlength="1000" placeholder="Viết phản hồi..." data-reply><?= e($r['admin_reply'] ?? '') ?></textarea>
+                    <div class="adm-reply__foot">
+                        <span class="d-flex gap-2">
+                            <button class="bh-btn bh-btn--outline bh-btn--sm" type="button" data-cancel>Hủy</button>
+                            <button class="bh-btn bh-btn--primary bh-btn--sm" type="submit">Gửi</button>
+                        </span>
+                    </div>
+                </form>
+            </details>
+        </div>
+    </article>
+<?php endforeach; ?>
+<?php if ($rows === []) : ?><div class="adm-card adm-empty">Không có đánh giá phù hợp.</div><?php endif; ?>
+</div>
+<div class="adm-pager"><?= $paginator->render() ?></div>
+
+<script>
+document.querySelectorAll('.adm-reply').forEach(function (d) {
+  var ta = d.querySelector('[data-reply]');
+  d.addEventListener('toggle', function () { if (d.open) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } });
+  d.querySelector('[data-cancel]').addEventListener('click', function () { d.open = false; });
+});
+</script>

@@ -8,6 +8,9 @@ use App\Core\Database;
 
 final class ProductRepository extends BaseRepository
 {
+    /** Active products with this much stock or less are flagged "needs restocking" in the admin. */
+    public const RESTOCK_AT = 5;
+
     private const SORTS = [
         'newest' => 'p.created_at DESC, p.id DESC',
         'price_asc' => 'p.price ASC',
@@ -225,7 +228,7 @@ final class ProductRepository extends BaseRepository
     // ---------------------------------------------------------------- admin
 
     /** @return array{0: string, 1: array<string, mixed>} */
-    private function adminWhere(string $search, int $categoryId, string $status): array
+    private function adminWhere(string $search, int $categoryId, string $view): array
     {
         $clauses = [];
         $params = [];
@@ -237,17 +240,20 @@ final class ProductRepository extends BaseRepository
             $clauses[] = 'p.category_id = :cat';
             $params['cat'] = $categoryId;
         }
-        if ($status === 'active' || $status === 'hidden') {
-            $clauses[] = 'p.is_active = :active';
-            $params['active'] = $status === 'active' ? 1 : 0;
+        if ($view === 'active') {
+            $clauses[] = 'p.is_active = 1';
+        } elseif ($view === 'hidden') {
+            $clauses[] = 'p.is_active = 0';
+        } elseif ($view === 'restock') {
+            $clauses[] = 'p.is_active = 1 AND p.stock_quantity <= ' . self::RESTOCK_AT;
         }
 
         return [$clauses === [] ? '' : 'WHERE ' . implode(' AND ', $clauses), $params];
     }
 
-    public function adminCount(string $search, int $categoryId, string $status): int
+    public function adminCount(string $search, int $categoryId, string $view): int
     {
-        [$where, $params] = $this->adminWhere($search, $categoryId, $status);
+        [$where, $params] = $this->adminWhere($search, $categoryId, $view);
 
         return (int) $this->fetchValue(
             "SELECT COUNT(*) FROM products p LEFT JOIN brands b ON b.id = p.brand_id {$where}",
@@ -256,9 +262,9 @@ final class ProductRepository extends BaseRepository
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function adminList(string $search, int $categoryId, string $status, int $limit, int $offset): array
+    public function adminList(string $search, int $categoryId, string $view, int $limit, int $offset): array
     {
-        [$where, $params] = $this->adminWhere($search, $categoryId, $status);
+        [$where, $params] = $this->adminWhere($search, $categoryId, $view);
         $params['limit'] = $limit;
         $params['offset'] = $offset;
 
@@ -272,8 +278,23 @@ final class ProductRepository extends BaseRepository
         );
     }
 
+    /** Counts for the admin tabs. @return array<string, int> */
+    public function viewCounts(): array
+    {
+        $row = $this->fetchOne(
+            'SELECT COUNT(*) AS total, COALESCE(SUM(is_active = 1), 0) AS active, COALESCE(SUM(is_active = 0), 0) AS hidden,
+                    COALESCE(SUM(is_active = 1 AND stock_quantity <= ' . self::RESTOCK_AT . '), 0) AS restock
+             FROM products'
+        ) ?? [];
+
+        return [
+            'all' => (int) ($row['total'] ?? 0), 'active' => (int) ($row['active'] ?? 0),
+            'restock' => (int) ($row['restock'] ?? 0), 'hidden' => (int) ($row['hidden'] ?? 0),
+        ];
+    }
+
     /** @param array<string, mixed> $data */
-    public function create(array $data, array $tagIds): int
+    public function create(array $data, ?array $tagIds = null): int
     {
         return Database::transaction(function () use ($data, $tagIds): int {
             $columns = array_keys($data);
@@ -286,19 +307,23 @@ final class ProductRepository extends BaseRepository
                 array_values($data)
             );
             $id = (int) $this->db()->lastInsertId();
-            $this->syncTags($id, $tagIds);
+            if ($tagIds !== null) {
+                $this->syncTags($id, $tagIds);
+            }
 
             return $id;
         });
     }
 
     /** @param array<string, mixed> $data */
-    public function update(int $id, array $data, array $tagIds): void
+    public function update(int $id, array $data, ?array $tagIds = null): void
     {
         Database::transaction(function () use ($id, $data, $tagIds): void {
             $assignments = implode(', ', array_map(static fn (string $c): string => "{$c} = ?", array_keys($data)));
             $this->execute("UPDATE products SET {$assignments} WHERE id = ?", [...array_values($data), $id]);
-            $this->syncTags($id, $tagIds);
+            if ($tagIds !== null) { // null = leave the product's existing tags untouched
+                $this->syncTags($id, $tagIds);
+            }
         });
     }
 

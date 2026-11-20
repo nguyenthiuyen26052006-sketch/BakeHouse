@@ -7,3 +7,5 @@
 .idea/
 .vscode/
 /_peer_backup/
+/storage/cache/*
+!/storage/cache/.gitkeep

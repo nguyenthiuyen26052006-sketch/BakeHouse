@@ -17,8 +17,8 @@ final class AuthController extends BaseController
 {
     public function showLogin(Request $request): Response
     {
-        if (Auth::isAdmin()) {
-            return $this->redirect('/admin');
+        if ($redirect = $this->alreadySignedIn()) {
+            return $redirect;
         }
 
         return $this->render('admin.auth.login', ['title' => 'Đăng nhập quản trị'], 'layouts.admin-auth');
@@ -26,6 +26,10 @@ final class AuthController extends BaseController
 
     public function login(Request $request): Response
     {
+        if ($redirect = $this->alreadySignedIn()) {
+            return $redirect;
+        }
+
         $validator = new Validator($request->getAllInput(), ['identity' => 'required', 'password' => 'required']);
         if (!$validator->validate()) {
             return $this->redirectWithErrors($request, '/admin/login', $validator->errors());
@@ -57,5 +61,23 @@ final class AuthController extends BaseController
         $this->flash('success', 'Bạn đã đăng xuất.');
 
         return $this->redirect('/admin/login');
+    }
+
+    /**
+     * One session = one role. An admin goes straight to the back office; a customer must log out first
+     * (a customer session is never silently replaced by an admin one).
+     */
+    private function alreadySignedIn(): ?Response
+    {
+        if (Auth::isAdmin()) {
+            return $this->redirect('/admin');
+        }
+        if (Auth::check()) {
+            $this->flash('warning', 'Bạn đang đăng nhập bằng tài khoản khách. Hãy đăng xuất trước khi vào khu vực quản trị.');
+
+            return $this->redirect('/');
+        }
+
+        return null;
     }
 }

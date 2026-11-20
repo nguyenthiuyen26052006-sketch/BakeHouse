@@ -6,5 +6,5 @@
     <?php if (!empty($exception)) : ?>
         <pre class="text-start small bg-white border rounded p-3"><?= e($exception->getMessage() . ' @ ' . $exception->getFile() . ':' . $exception->getLine()) ?></pre>
     <?php endif; ?>
-    <a class="btn btn-lg" style="background:var(--bh-color-caramel);color:#fff" href="/">Về trang chủ</a>
+    <a class="btn btn-lg" style="background:var(--bh-color-caramel);color:#fff" href="<?= e(\App\Core\Auth::homeUrl()) ?>"><?= \App\Core\Auth::isAdmin() ? 'Về trang quản trị' : 'Về trang chủ' ?></a>
 </section>

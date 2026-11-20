@@ -131,7 +131,14 @@ if (!function_exists('img_url')) {
     /** Public URL for an uploaded/static image path, with a placeholder fallback. */
     function img_url(?string $path, string $fallback = 'assets/img/product-placeholder.svg'): string
     {
-        return asset(($path === null || $path === '') ? $fallback : $path);
+        if ($path === null || $path === '') {
+            return asset($fallback);
+        }
+        if (str_starts_with($path, 'uploads/') && \App\Services\Storage\AzureBlobStorage::isConfigured()) {
+            return (new \App\Services\Storage\AzureBlobStorage())->readUrl($path);
+        }
+
+        return asset($path);
     }
 }
 

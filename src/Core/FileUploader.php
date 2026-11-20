@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Services\Storage\AzureBlobStorage;
 use RuntimeException;
 
 final class FileUploader
@@ -43,6 +44,18 @@ final class FileUploader
         }
 
         $subDirectory = trim(preg_replace('/[^a-z0-9_\/-]/i', '', $subDirectory), '/');
+        if (AzureBlobStorage::isConfigured()) {
+            $blobPath = 'uploads/' . $subDirectory . '/' . bin2hex(random_bytes(16)) . '.' . self::ALLOWED_MIME[$mime];
+            try {
+                (new AzureBlobStorage())->put($blobPath, (string) file_get_contents($file['tmp_name']), $mime);
+            } catch (\Throwable $e) {
+                ErrorHandler::logException($e);
+                throw new RuntimeException('Không thể lưu ảnh lên kho lưu trữ.');
+            }
+
+            return $blobPath;
+        }
+
         $root = $this->uploadRoot !== '' ? $this->uploadRoot : BASE_PATH . '/public/uploads';
         $directory = $root . '/' . $subDirectory;
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
@@ -61,6 +74,16 @@ final class FileUploader
     public function delete(?string $relativePath): void
     {
         if ($relativePath === null || !str_starts_with($relativePath, 'uploads/') || str_contains($relativePath, '..')) {
+            return;
+        }
+
+        if (AzureBlobStorage::isConfigured()) {
+            try {
+                (new AzureBlobStorage())->delete($relativePath);
+            } catch (\Throwable $e) {
+                ErrorHandler::logException($e);
+            }
+
             return;
         }
 

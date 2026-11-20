@@ -49,6 +49,11 @@ final class AuthController extends BaseController
         Session::remove('intended_url');
         $this->flash('success', 'Đăng nhập thành công. Chào mừng bạn trở lại!');
 
+        // Administrators never land on the customer site, whatever page they were heading to.
+        if (($user['role'] ?? null) === 'admin') {
+            return $this->redirect('/admin');
+        }
+
         return $this->redirect(str_starts_with($intended, '/') && !str_starts_with($intended, '//') ? $intended : '/');
     }
 

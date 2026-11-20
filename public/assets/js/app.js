@@ -46,6 +46,8 @@
     });
   }
 
+  window.BH.updateCartBadge = updateCartBadge;
+
   // ---------- Add to cart ----------
   document.addEventListener('click', function (event) {
     var btn = event.target.closest('[data-add-to-cart]');
@@ -199,50 +201,4 @@
       });
     });
   });
-
-  // ---------- Chatbot ----------
-  var chat = document.getElementById('bhChat');
-  if (chat) {
-    var body = chat.querySelector('.bh-chat__body');
-    document.getElementById('bhChatToggle').addEventListener('click', function () { chat.classList.toggle('is-open'); });
-    chat.querySelector('[data-chat-close]').addEventListener('click', function () { chat.classList.remove('is-open'); });
-
-    var addMsg = function (text, who) {
-      var div = document.createElement('div');
-      div.className = 'bh-chat__msg bh-chat__msg--' + who;
-      div.textContent = text;
-      body.appendChild(div);
-      body.scrollTop = body.scrollHeight;
-      return div;
-    };
-
-    chat.querySelector('form').addEventListener('submit', function (event) {
-      event.preventDefault();
-      var form = event.target;
-      var dish = form.dish.value.trim();
-      if (!dish) { return; }
-      addMsg('Mình muốn làm ' + dish + (form.budget.value ? ', ngân sách ' + form.budget.value + '₫' : ''), 'user');
-      var typing = addMsg('Đang tìm nguyên liệu…', 'bot');
-      post('/api/chatbot/suggest', { dish: dish, budget: form.budget.value }).then(function (res) {
-        typing.textContent = res.message;
-        (res.products || []).forEach(function (p) {
-          var item = document.createElement('div');
-          item.className = 'bh-chat__item';
-          item.innerHTML = '<img alt=""><div class="flex-grow-1"><a class="fw-semibold d-block small"></a>' +
-            '<span class="bh-price small"></span></div>' +
-            '<button type="button" class="bh-btn bh-btn--primary bh-btn--sm" title="Thêm vào giỏ" aria-label="Thêm vào giỏ"><i class="bi bi-cart-plus"></i></button>';
-          item.querySelector('img').src = p.image;
-          var link = item.querySelector('a');
-          link.textContent = p.name;
-          link.href = '/products/' + p.slug;
-          item.querySelector('.bh-price').textContent = p.price + ' / ' + p.unit;
-          item.querySelector('button').setAttribute('data-add-to-cart', p.id);
-          body.appendChild(item);
-        });
-        if (res.products && res.products.length) { addMsg('Tổng ước tính: ' + res.total, 'bot'); }
-        body.scrollTop = body.scrollHeight;
-      }).catch(function () { typing.textContent = 'Xin lỗi, mình đang gặp sự cố. Bạn thử lại sau nhé.'; });
-      form.dish.value = '';
-    });
-  }
 })();

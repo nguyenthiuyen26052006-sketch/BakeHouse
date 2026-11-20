@@ -12,6 +12,6 @@ final class GuestMiddleware implements MiddlewareInterface
 {
     public function handle(Request $request): ?Response
     {
-        return Auth::check() ? Response::redirect('/') : null;
+        return Auth::check() ? Response::redirect(Auth::homeUrl()) : null;
     }
 }

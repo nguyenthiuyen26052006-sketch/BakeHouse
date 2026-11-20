@@ -17,6 +17,7 @@ $flashes = \App\Core\Session::pullFlash();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="<?= e(asset('assets/css/tokens.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset('assets/css/app.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('assets/css/chatbot.css')) ?>" rel="stylesheet">
 </head>
 <body data-shipping-fee="<?= (int) \App\Core\Env::int('SHIPPING_FEE', 30000) ?>">
 <?php partial('header'); ?>
@@ -33,5 +34,6 @@ $flashes = \App\Core\Session::pullFlash();
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= e(asset('assets/js/app.js')) ?>"></script>
+<script src="<?= e(asset('assets/js/chatbot.js')) ?>"></script>
 </body>
 </html>

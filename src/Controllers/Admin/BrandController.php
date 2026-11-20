@@ -12,16 +12,15 @@ final class BrandController extends AbstractResourceController
             'title' => 'Thương hiệu',
             'route' => 'brands',
             'table' => 'brands',
-            'search' => ['name', 'slug'],
+            'search' => ['name'],
             'slug_from' => 'name',
+            'product_fk' => 'brand_id',
             'columns' => [
-                ['key' => 'name', 'label' => 'Tên', 'type' => 'text'],
-                ['key' => 'slug', 'label' => 'Slug', 'type' => 'text'],
-                ['key' => 'created_at', 'label' => 'Ngày tạo', 'type' => 'date'],
+                ['key' => 'name', 'label' => 'Tên thương hiệu', 'type' => 'text'],
+                ['key' => 'product_count', 'label' => 'Số sản phẩm', 'type' => 'number'],
             ],
             'fields' => [
                 ['name' => 'name', 'label' => 'Tên thương hiệu', 'type' => 'text', 'rules' => 'required|max:120'],
-                ['name' => 'slug', 'label' => 'Slug (để trống để tự tạo)', 'type' => 'text', 'rules' => 'max:140'],
             ],
         ];
     }

@@ -23,11 +23,13 @@ final class ErrorHandler
         }
 
         $view = is_file(BASE_PATH . "/src/Views/errors/{$status}.php") ? "errors.{$status}" : 'errors.404';
+        // Administrators never see the customer chrome, not even on error pages.
+        $layout = Auth::isAdmin() ? 'layouts.admin' : 'layouts.main';
         $html = View::render($view, [
             'status' => $status,
             'title' => self::TITLES[$status] ?? 'Lỗi',
             'exception' => Env::bool('APP_DEBUG') ? $exception : null,
-        ]);
+        ], $layout);
 
         return Response::html($html, $status);
     }

@@ -1,109 +1,108 @@
 <?php
-/** @var array $summary */ /** @var array $recentOrders */ /** @var array $activities */ /** @var array $monthly */
-/** @var array $daily */ /** @var array $topSelling */ /** @var array $topReviewed */
+/** @var \App\Core\ReportPeriod $period */ /** @var array $summary */ /** @var array $chart */ /** @var array $topSelling */
+/** @var array $attention */ /** @var array $recentOrders */
+$todo = [
+    [$attention['pending_orders'], 'Đơn chờ xử lý', '/admin/orders?status=pending', 'bi-hourglass-split'],
+    [$attention['shipping_orders'], 'Đơn đang giao', '/admin/orders?status=shipped', 'bi-truck'],
+    [$attention['restock'], 'Sản phẩm cần nhập thêm', '/admin/products?view=restock', 'bi-box-seam'],
+    [$attention['unanswered_reviews'], 'Đánh giá chưa phản hồi', '/admin/reviews?reply=none', 'bi-chat-left-text'],
+];
 $kpis = [
-    ['Tổng đơn hàng', number_format($summary['total_orders'], 0, ',', '.'), 'bi-receipt', '/admin/orders'],
-    ['Đơn hoàn tất', number_format($summary['completed_orders'], 0, ',', '.'), 'bi-bag-check', '/admin/orders?status=delivered'],
-    ['Đơn chưa hoàn tất', number_format($summary['in_progress_orders'], 0, ',', '.'), 'bi-hourglass-split', '/admin/orders?status=in_progress'],
-    ['Nguyên vật liệu đã bán', number_format($summary['items_sold'], 0, ',', '.'), 'bi-box-seam', '/admin/products'],
-    ['Doanh thu', format_vnd($summary['revenue']), 'bi-cash-coin', '/admin/orders?status=delivered'],
-    ['Doanh thu trung bình / đơn', format_vnd($summary['average_revenue']), 'bi-graph-up-arrow', '/admin/orders?status=delivered'],
+    ['Doanh thu', format_vnd($summary['revenue'])],
+    ['Số đơn', number_format($summary['orders'], 0, ',', '.')],
+    ['Giá trị TB / đơn', format_vnd($summary['average'])],
+    ['Sản phẩm đã bán', number_format($summary['items_sold'], 0, ',', '.')],
 ];
 ?>
-<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-xl-3">
-    <?php foreach ($kpis as [$label, $value, $icon, $href]) : ?>
-        <div class="col"><a class="bh-kpi bh-kpi--link d-flex align-items-center justify-content-between gap-3" href="<?= e($href) ?>">
-            <div><div class="bh-kpi__label"><?= e($label) ?></div><div class="bh-kpi__value"><?= e($value) ?></div></div>
-            <div class="bh-kpi__icon"><i class="bi <?= e($icon) ?>"></i></div>
-        </a></div>
+<div class="adm-head">
+    <nav class="adm-period" aria-label="Kỳ báo cáo">
+        <?php foreach (\App\Core\ReportPeriod::OPTIONS as $key => $label) : ?>
+            <a href="/admin?range=<?= e($key) ?>" class="<?= $period->key === $key ? 'is-active' : '' ?>"<?= $period->key === $key ? ' aria-current="true"' : '' ?>><?= e($label) ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <a class="bh-btn bh-btn--outline bh-btn--sm" href="/admin/report?range=<?= e($period->key) ?>" target="_blank" rel="noopener"><i class="bi bi-printer"></i> In báo cáo</a>
+</div>
+
+<div class="adm-todo">
+    <?php foreach ($todo as [$count, $label, $href, $icon]) : ?>
+        <a href="<?= e($href) ?>" class="<?= $count > 0 ? 'is-hot' : '' ?>">
+            <span class="adm-todo__n"><?= (int) $count ?></span><span class="adm-todo__t"><?= e($label) ?></span>
+        </a>
     <?php endforeach; ?>
 </div>
-<p class="small bh-muted mb-4">Doanh thu được tính trên tổng các mục đơn hàng đã giao thành công.</p>
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-7"><div class="bh-panel">
-        <div class="bh-panel__title"><i class="bi bi-bar-chart-line"></i><h5 class="mb-0">Doanh thu theo tháng</h5></div>
-        <canvas id="chartMonthly" height="130"></canvas>
-    </div></div>
-    <div class="col-lg-5"><div class="bh-panel">
-        <div class="bh-panel__title"><i class="bi bi-graph-up"></i><h5 class="mb-0">Doanh thu 30 ngày gần nhất</h5></div>
-        <canvas id="chartDaily" height="190"></canvas>
-    </div></div>
+<div class="adm-kpis">
+    <?php foreach ($kpis as [$label, $value]) : ?>
+        <div class="adm-kpi"><div class="adm-kpi__label"><?= e($label) ?></div><div class="adm-kpi__value"><?= e($value) ?></div></div>
+    <?php endforeach; ?>
 </div>
+<p class="small bh-muted mb-3">Doanh thu và số liệu bán hàng tính trên các đơn đã hoàn tất, theo ngày đặt — <?= e($period->label()) ?>.</p>
 
-<div class="row g-4 mb-4">
-    <div class="col-lg-6"><div class="bh-panel">
-        <div class="bh-panel__title"><i class="bi bi-trophy"></i><h5 class="mb-0">Nguyên vật liệu bán chạy nhất</h5></div>
-        <?php if ($topSelling === []) : ?><p class="bh-muted mb-0">Chưa có dữ liệu.</p>
+<div class="adm-grid">
+    <section class="adm-card">
+        <div class="adm-card__head"><h2>Doanh thu · <?= e($period->label()) ?></h2></div>
+        <div class="adm-chart"><canvas id="chartRevenue" aria-label="Biểu đồ doanh thu" role="img"></canvas></div>
+    </section>
+    <section class="adm-card">
+        <div class="adm-card__head"><h2>Sản phẩm bán chạy</h2></div>
+        <?php if ($topSelling === []) : ?><p class="bh-muted mb-0">Chưa có đơn hoàn tất trong kỳ này.</p>
         <?php else : ?>
-            <ul class="bh-rank-list">
+            <ol class="adm-rank">
                 <?php foreach ($topSelling as $i => $row) : ?>
-                    <li class="bh-rank-item">
-                        <span class="bh-rank-item__num"><?= $i + 1 ?></span>
-                        <span class="bh-rank-item__name"><?= e($row['product_name']) ?></span>
-                        <span class="badge bg-warning text-dark bh-rank-item__badge"><?= (int) $row['qty'] ?> đã bán</span>
-                    </li>
+                    <li><span class="adm-rank__n"><?= $i + 1 ?></span><span class="adm-rank__name"><?= e($row['product_name']) ?></span>
+                        <span class="adm-rank__val"><strong><?= (int) $row['qty'] ?> đã bán</strong><?= e(format_vnd((int) $row['revenue'])) ?></span></li>
                 <?php endforeach; ?>
-            </ul>
+            </ol>
         <?php endif; ?>
-    </div></div>
-    <div class="col-lg-6"><div class="bh-panel">
-        <div class="bh-panel__title"><i class="bi bi-star"></i><h5 class="mb-0">Nguyên vật liệu được đánh giá nhiều nhất</h5></div>
-        <?php if ($topReviewed === []) : ?><p class="bh-muted mb-0">Chưa có dữ liệu.</p>
-        <?php else : ?>
-            <ul class="bh-rank-list">
-                <?php foreach ($topReviewed as $i => $row) : ?>
-                    <li class="bh-rank-item">
-                        <span class="bh-rank-item__num"><?= $i + 1 ?></span>
-                        <span class="bh-rank-item__name"><?= e($row['name']) ?></span>
-                        <span class="badge bg-warning text-dark bh-rank-item__badge"><?= (int) $row['rating_count'] ?> đánh giá · <?= e(number_format((float) $row['rating_avg'], 1)) ?>★</span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </div></div>
+    </section>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-7"><div class="bh-panel">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <div class="bh-panel__title mb-0"><i class="bi bi-receipt"></i><h5 class="mb-0">Đơn hàng gần đây</h5></div>
-            <a href="/admin/orders">Xem tất cả</a>
-        </div>
-        <div class="table-responsive"><table class="table align-middle mb-0 bh-table"><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Tổng đơn</th><th>Trạng thái</th></tr></thead><tbody>
+<section class="adm-card adm-card--flush">
+    <div class="adm-card__head px-3 pt-3 mb-0"><h2>Đơn hàng gần đây</h2><a href="/admin/orders">Xem tất cả</a></div>
+    <table class="table adm-table mt-2 d-none d-md-table">
+        <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th class="adm-num">Tổng đơn</th><th>Trạng thái</th></tr></thead>
+        <tbody>
         <?php foreach ($recentOrders as $order) : ?>
-            <tr><td><a href="/admin/orders/<?= (int) $order['id'] ?>"><?= e($order['order_code']) ?></a></td><td><?= e($order['recipient_name']) ?></td><td><?= e(format_vnd((int) $order['total_amount'])) ?></td><td><?= status_badge($order['status']) ?></td></tr>
+            <tr>
+                <td><a class="adm-name" href="/admin/orders/<?= (int) $order['id'] ?>"><?= e($order['order_code']) ?></a></td>
+                <td><?= e($order['recipient_name']) ?></td>
+                <td><?= e(date('d/m/Y H:i', strtotime($order['created_at']))) ?></td>
+                <td class="adm-num"><?= e(format_vnd((int) $order['total_amount'])) ?></td>
+                <td><?= status_badge($order['status']) ?></td>
+            </tr>
         <?php endforeach; ?>
-        <?php if ($recentOrders === []) : ?><tr><td colspan="4" class="text-center bh-muted">Chưa có đơn hàng.</td></tr><?php endif; ?>
-        </tbody></table></div>
-    </div></div>
-    <div class="col-lg-5"><div class="bh-panel">
-        <div class="bh-panel__title"><i class="bi bi-clock-history"></i><h5 class="mb-0">Hoạt động gần đây</h5></div>
-        <?php if ($activities === []) : ?><p class="bh-muted mb-0">Chưa có hoạt động.</p>
-        <?php else : ?>
-            <ul class="bh-timeline">
-            <?php foreach ($activities as $activity) : ?>
-                <li>Đơn <strong><?= e($activity['order_code']) ?></strong> chuyển sang <?= e(\App\Enums\OrderStatus::from($activity['to_status'])->label()) ?><br><small class="bh-muted"><?= e(date('d/m/Y H:i', strtotime($activity['created_at']))) ?></small></li>
-            <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </div></div>
-</div>
+        </tbody>
+    </table>
+    <ul class="adm-olist d-md-none">
+        <?php foreach ($recentOrders as $order) : ?>
+            <li><a href="/admin/orders/<?= (int) $order['id'] ?>">
+                <span><strong><?= e($order['order_code']) ?></strong> · <?= e($order['recipient_name']) ?></span><?= status_badge($order['status']) ?>
+                <small><?= e(date('d/m H:i', strtotime($order['created_at']))) ?></small><strong><?= e(format_vnd((int) $order['total_amount'])) ?></strong>
+            </a></li>
+        <?php endforeach; ?>
+    </ul>
+    <?php if ($recentOrders === []) : ?><div class="adm-empty">Chưa có đơn hàng.</div><?php endif; ?>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 (function () {
-  var monthly = <?= json_encode($monthly, JSON_UNESCAPED_UNICODE) ?>;
-  var daily = <?= json_encode($daily, JSON_UNESCAPED_UNICODE) ?>;
+  var data = <?= json_encode($chart['series'], JSON_UNESCAPED_UNICODE) ?>;
+  var byDay = <?= json_encode($chart['bucket'] === 'day') ?>;
   var css = getComputedStyle(document.documentElement);
-  var caramel = css.getPropertyValue('--bh-color-caramel').trim();
-  var rust = css.getPropertyValue('--bh-color-rust').trim();
   var fmt = function (v) { return new Intl.NumberFormat('vi-VN').format(v) + ' ₫'; };
-  var opts = { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return fmt(c.parsed.y); } } } },
-               scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return new Intl.NumberFormat('vi-VN').format(v); } } } } };
-  new Chart(document.getElementById('chartMonthly'), { type: 'bar',
-    data: { labels: Object.keys(monthly), datasets: [{ data: Object.values(monthly), backgroundColor: caramel, borderRadius: 6 }] }, options: opts });
-  new Chart(document.getElementById('chartDaily'), { type: 'line',
-    data: { labels: Object.keys(daily).map(function (d) { return d.slice(5); }), datasets: [{ data: Object.values(daily), borderColor: rust, backgroundColor: 'rgba(201,148,74,.2)', fill: true, tension: .3 }] }, options: opts });
+  var label = function (k) { var p = k.split('-'); return byDay ? p[2] + '/' + p[1] : p[1] + '/' + p[0]; };
+  new Chart(document.getElementById('chartRevenue'), {
+    type: 'bar',
+    data: { labels: Object.keys(data).map(label), datasets: [{ data: Object.values(data), backgroundColor: css.getPropertyValue('--bh-color-caramel').trim(), borderRadius: 4, maxBarThickness: 28 }] },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return fmt(c.parsed.y); } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+        y: { beginAtZero: true, ticks: { callback: function (v) { return v >= 1e6 ? (v / 1e6) + ' tr' : (v >= 1e3 ? (v / 1e3) + 'k' : v); } } }
+      }
+    }
+  });
 })();
 </script>

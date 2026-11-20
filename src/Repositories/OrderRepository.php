@@ -154,74 +154,34 @@ final class OrderRepository extends BaseRepository
         $params['offset'] = $offset;
 
         return $this->fetchAll(
-            "SELECT o.* FROM orders o {$where} ORDER BY o.id DESC LIMIT :limit OFFSET :offset",
+            "SELECT o.*, (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id) AS item_count
+             FROM orders o {$where} ORDER BY o.id DESC LIMIT :limit OFFSET :offset",
             $params
         );
     }
 
-    // ---------------------------------------------------------------- reports
-
-    /** @return array{0: string, 1: array<string, mixed>} */
-    private function reportWhere(string $search, string $month): array
+    /** Orders per status (for the admin tabs), plus the grand total under "all". @return array<string, int> */
+    public function statusCounts(): array
     {
-        $clauses = [];
-        $params = [];
-        if ($search !== '') {
-            $clauses[] = '(o.order_code LIKE :q OR o.recipient_name LIKE :q2 OR o.shipping_phone LIKE :q3)';
-            $params['q'] = $params['q2'] = $params['q3'] = $this->likeTerm($search);
-        }
-        if (preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
-            $clauses[] = "DATE_FORMAT(o.created_at, '%Y-%m') = :month";
-            $params['month'] = $month;
+        $counts = ['all' => 0, 'pending' => 0, 'processing' => 0, 'shipped' => 0, 'delivered' => 0];
+        foreach ($this->fetchAll('SELECT status, COUNT(*) AS c FROM orders GROUP BY status') as $row) {
+            $counts[$row['status']] = (int) $row['c'];
+            $counts['all'] += (int) $row['c'];
         }
 
-        return [$clauses === [] ? '' : 'WHERE ' . implode(' AND ', $clauses), $params];
+        return $counts;
     }
 
-    public function reportCount(string $search, string $month): int
+    /** Orders created in [from, to] (inclusive dates, null = unbounded), oldest first — used by the printable report. */
+    public function listBetween(?string $from, ?string $to): array
     {
-        [$where, $params] = $this->reportWhere($search, $month);
-
-        return (int) $this->fetchValue("SELECT COUNT(*) FROM orders o {$where}", $params);
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    public function reportList(string $search, string $month, int $limit, int $offset): array
-    {
-        [$where, $params] = $this->reportWhere($search, $month);
-        $params['limit'] = $limit;
-        $params['offset'] = $offset;
+        if ($from === null) {
+            return $this->fetchAll('SELECT * FROM orders ORDER BY created_at ASC, id ASC');
+        }
 
         return $this->fetchAll(
-            "SELECT o.* FROM orders o {$where} ORDER BY o.created_at ASC, o.id ASC LIMIT :limit OFFSET :offset",
-            $params
+            'SELECT * FROM orders WHERE created_at >= :from AND created_at < DATE_ADD(:to, INTERVAL 1 DAY) ORDER BY created_at ASC, id ASC',
+            ['from' => $from, 'to' => $to]
         );
-    }
-
-    /** All matching rows, no pagination — used for the print/export view. */
-    public function reportAll(string $search, string $month): array
-    {
-        [$where, $params] = $this->reportWhere($search, $month);
-
-        return $this->fetchAll("SELECT o.* FROM orders o {$where} ORDER BY o.created_at ASC, o.id ASC", $params);
-    }
-
-    /** @return array{total_orders: int, delivered_orders: int, total_revenue: int} */
-    public function reportSummary(string $search, string $month): array
-    {
-        [$where, $params] = $this->reportWhere($search, $month);
-        $row = $this->fetchOne(
-            "SELECT COUNT(*) AS total_orders,
-                    SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) AS delivered_orders,
-                    COALESCE(SUM(o.total_amount), 0) AS total_revenue
-             FROM orders o {$where}",
-            $params
-        ) ?? ['total_orders' => 0, 'delivered_orders' => 0, 'total_revenue' => 0];
-
-        return [
-            'total_orders' => (int) $row['total_orders'],
-            'delivered_orders' => (int) $row['delivered_orders'],
-            'total_revenue' => (int) $row['total_revenue'],
-        ];
     }
 }

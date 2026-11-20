@@ -24,12 +24,16 @@ final class OrderController extends BaseController
     {
         $search = trim((string) $request->getQuery('q', ''));
         $status = (string) $request->getQuery('status', '');
+        if (!in_array($status, \App\Enums\OrderStatus::values(), true)) {
+            $status = '';
+        }
         $paginator = Paginator::fromRequest($request, $this->orders->adminCount($search, $status), 10);
 
         return $this->render('admin.orders.index', [
             'title' => 'Đơn hàng',
             'rows' => $this->orders->adminList($search, $status, $paginator->getLimit(), $paginator->getOffset()),
             'paginator' => $paginator,
+            'counts' => $this->orders->statusCounts(),
             'search' => $search,
             'status' => $status,
         ], 'layouts.admin');
@@ -42,12 +46,11 @@ final class OrderController extends BaseController
             return ErrorHandler::render(404, $request);
         }
 
-        $customer = (new \App\Repositories\UserRepository())->findById((int) $order['user_id']);
+        
 
         return $this->render('admin.orders.show', [
             'title' => 'Đơn ' . $order['order_code'],
             'order' => $order,
-            'customer' => $customer,
             'items' => $this->orders->items((int) $id),
             'histories' => $this->orders->histories((int) $id),
         ], 'layouts.admin');
@@ -62,7 +65,7 @@ final class OrderController extends BaseController
             $this->flash('danger', $e->getMessage());
         }
 
-        return $this->redirect('/admin/orders/' . (int) $id);
+        return $this->back($request, (int) $id);
     }
 
     public function confirmPayment(Request $request, string $id): Response
@@ -74,6 +77,12 @@ final class OrderController extends BaseController
             $this->flash('danger', $e->getMessage());
         }
 
-        return $this->redirect('/admin/orders/' . (int) $id);
+        return $this->back($request, (int) $id);
+    }
+
+    /** Actions fired from the order list go back to the list (keeping its filters); from the detail page they stay on it. */
+    private function back(Request $request, int $id): Response
+    {
+        return $request->getInput('from') === 'list' ? $this->redirectBack('/admin/orders') : $this->redirect('/admin/orders/' . $id);
     }
 }
